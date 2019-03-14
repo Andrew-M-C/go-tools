@@ -2,8 +2,8 @@ package _test
 
 import (
 	"time"
-	"github.com/Andrew-M-C/GoTools/log"
-	amcjson "github.com/Andrew-M-C/GoTools/json"
+	"github.com/Andrew-M-C/go-tools/log"
+	amcjson "github.com/Andrew-M-C/go-tools/json"
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 )

@@ -1,7 +1,7 @@
 package main
 
 import (
-	test "github.com/Andrew-M-C/GoTools/_test"
+	test "github.com/Andrew-M-C/go-tools/_test"
 )
 
 func main() {

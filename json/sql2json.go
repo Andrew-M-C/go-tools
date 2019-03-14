@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"bytes"
 	"fmt"
-	"github.com/Andrew-M-C/GoTools/str"
+	"github.com/Andrew-M-C/go-tools/str"
 	// "database/sql"
 	// "github.com/go-sql-driver/mysql"
 )
