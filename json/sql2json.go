@@ -7,8 +7,7 @@ import (
 	"reflect"
 	"bytes"
 	"fmt"
-	// "../log"
-	"../str"
+	"github.com/Andrew-M-C/GoTools/str"
 	// "database/sql"
 	// "github.com/go-sql-driver/mysql"
 )
