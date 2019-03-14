@@ -8,20 +8,31 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Andrew-M-C/go-tools/str"
+	// "github.com/Andrew-M-C/go-tools/log"
 	// "database/sql"
 	// "github.com/go-sql-driver/mysql"
 )
 
+type Filter int
+const (
+	Normal		Filter = 0
+	IncludeMode	Filter = 1
+	ExcludeMode	Filter = 2
+)
+
 type Option struct {
-	OmitNull		bool
+	ShowNull		bool
 	FloatDigits		uint8
 	TimeDigits		uint8
+	FilterMode		Filter
+	FilterList		[]string
 }
 
 var dftOption = Option {
-	OmitNull: true,
+	ShowNull: false,
 	FloatDigits: 0,
 	TimeDigits: 0,
+	FilterMode: Normal,
 }
 
 func escapeJsonString(s string) string {
@@ -70,28 +81,51 @@ func convertTimeToString(t time.Time, digits uint8) string {
 	}
 }
 
-func getFieldTag(field *reflect.StructField) string {
-	var tag_list []string
+func getFieldTag(field *reflect.StructField, filterMode Filter, filterMap map[string]int) string {
+	tag := ""
 
 	// read from "json"
-	tag_list = strings.SplitN(field.Tag.Get("json"), ",", 2)
-	if str.Valid(tag_list[0]) {
-		tag := tag_list[0]
-		if tag == "-" {
-			return ""
+	{
+		tag_list := strings.SplitN(field.Tag.Get("json"), ",", 2)
+		if str.Valid(tag_list[0]) {
+			tag = tag_list[0]
+			if tag == "-" {
+				return ""
+			}
 		}
-		return escapeJsonString(tag)
 	}
 
 	// read from "db"
-	tag_list = strings.SplitN(field.Tag.Get("db"), ",", 2)
-	if str.Valid(tag_list[0]) {
-		tag := tag_list[0]
-		return escapeJsonString(tag)
+	if str.Empty(tag) {
+		tag_list := strings.SplitN(field.Tag.Get("db"), ",", 2)
+		if str.Valid(tag_list[0]) {
+			tag = tag_list[0]
+		}
 	}
 
-	// read field name
-	return escapeJsonString(field.Name)
+	// read from field name
+	if str.Empty(tag) {
+		tag = field.Name
+	}
+
+	// filter
+	switch filterMode {
+	case IncludeMode:
+		_, exist := filterMap[tag]
+		if false == exist {
+			return ""
+		}
+	case ExcludeMode:
+		_, exist := filterMap[tag]
+		if exist {
+			return ""
+		}
+	default:
+		// do nothing
+	}
+
+	// done
+	return escapeJsonString(tag)
 }
 
 func processFieldInt64(tag string, i int64, valid bool, opt Option, keyList *[]string, valList *[]string) {
@@ -99,7 +133,7 @@ func processFieldInt64(tag string, i int64, valid bool, opt Option, keyList *[]s
 		*keyList = append(*keyList, tag)
 		*valList = append(*valList, strconv.FormatInt(i, 10))
 	} else {
-		if false == opt.OmitNull {
+		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
 			*valList = append(*valList, "null")
 		}
@@ -111,7 +145,7 @@ func processFieldString(tag string, s string, valid bool, opt Option, keyList *[
 		*keyList = append(*keyList, tag)
 		*valList = append(*valList, `"` + escapeJsonString(s) + `"`)
 	} else {
-		if false == opt.OmitNull {
+		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
 			*valList = append(*valList, "null")
 		}
@@ -127,7 +161,7 @@ func processFieldBool(tag string, b bool, valid bool, opt Option, keyList *[]str
 			*valList = append(*valList, "false")
 		}
 	} else {
-		if false == opt.OmitNull {
+		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
 			*valList = append(*valList, "null")
 		}
@@ -139,7 +173,7 @@ func processFieldFloat64(tag string, f float64, valid bool, opt Option, keyList 
 		*keyList = append(*keyList, tag)
 		*valList = append(*valList, convertFloatToString(f, opt.FloatDigits))
 	} else {
-		if false == opt.OmitNull {
+		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
 			*valList = append(*valList, "null")
 		}
@@ -151,16 +185,16 @@ func processFieldTime(tag string, t time.Time, valid bool, opt Option, keyList *
 		*keyList = append(*keyList, tag)
 		*valList = append(*valList, `"` + convertTimeToString(t, opt.TimeDigits) + `"`)
 	} else {
-		if false == opt.OmitNull {
+		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
 			*valList = append(*valList, "null")
 		}
 	}
 }
 
-func processField(field *reflect.StructField, value reflect.Value, opt Option, keyList *[]string, valList *[]string) {
-	tag := getFieldTag(field)
-	if tag == "" {		// skip ignored fields
+func processField(field *reflect.StructField, value reflect.Value, opt Option, filterMap map[string]int, keyList *[]string, valList *[]string) {
+	tag := getFieldTag(field, opt.FilterMode, filterMap)
+	if str.Empty(tag) {		// skip ignored fields
 		return
 	}
 
@@ -207,10 +241,18 @@ func sqlTypeToJson(t reflect.Type, v reflect.Value, opt Option) (string, error) 
 	key_list := make([]string, 0, num_field)
 	value_list := make([]string, 0, num_field)
 
+	// parse filter mode
+	filter_map := make(map[string]int)
+	if opt.FilterMode == IncludeMode || opt.FilterMode == ExcludeMode {
+		for _, key := range opt.FilterList {
+			filter_map[key] = 1
+		}
+	}
+
 	// parse struct
 	for i := 0; i < num_field; i ++ {
 		field := t.Field(i)
-		processField(&field, v.Field(i), opt, &key_list, &value_list)
+		processField(&field, v.Field(i), opt, filter_map, &key_list, &value_list)
 	}
 
 	// get json string

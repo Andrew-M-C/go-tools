@@ -34,7 +34,7 @@ func TestSqlToJson() {
 	item.NBool = sql.NullBool{Bool:true, Valid:true}
 	item.NInt = sql.NullInt64{Int64:9999, Valid:true}
 	item.Int = 8888
-	item.String = "Hello, world!"
+	item.String = "Hello,\tworld!"
 	item.NoTagString = "empty string"
 	item.Ignore = "ignore string"
 	item.Bool = true
@@ -43,17 +43,33 @@ func TestSqlToJson() {
 
 	var ret string
 
+	// normal mode
 	ret, _ = amcjson.SqlToJson(&item)
 	log.Debug("json result: %s", ret)
 
+	// test float digit count after decomal point
 	item.Float = 0.0
 	ret, _ = amcjson.SqlToJson(item)
 	log.Debug("json result: %s", ret)
 
-	ret, _ = amcjson.SqlToJson(item, amcjson.Option{OmitNull: false})
+	// test ShowNull option
+	ret, _ = amcjson.SqlToJson(item, amcjson.Option{ShowNull: true})
 	log.Debug("json result: %s", ret)
 
+	// test option of float digit count after decomal point
 	ret, _ = amcjson.SqlToJson(item, amcjson.Option{FloatDigits: 6, TimeDigits: 3})
+	log.Debug("json result: %s", ret)
+
+	// test include mode
+	ret, _ = amcjson.SqlToJson(item, amcjson.Option{
+		FilterMode: amcjson.IncludeMode,
+		FilterList: []string{"nul_name", "nul_time", "nul_float"} })
+	log.Debug("json result: %s", ret)
+
+	// test exclude mode
+	ret, _ = amcjson.SqlToJson(item, amcjson.Option{
+		FilterMode: amcjson.ExcludeMode,
+		FilterList: []string{"nul_name", "nul_time"} })
 	log.Debug("json result: %s", ret)
 	return
 }
