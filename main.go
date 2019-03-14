@@ -1,52 +1,50 @@
 package main
 
 import (
-	_ "time"
-	"reflect"
+	"time"
 	"./log"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	amcjson "./json"
+	"database/sql"
+	"github.com/go-sql-driver/mysql"
 )
 
-type TestTable struct {
-	ID			uint `gorm:"primary_key"`
-}
-
-func (TestTable) TableName() string {
-	return "t_test"
-}
-
-func checkTableExist(db *gorm.DB) {
-	tablePtr := &TestTable{}
-	log.Debug("Type: %s", reflect.TypeOf(*tablePtr))
-
-	if db.HasTable(tablePtr) {
-		log.Info("Has table")
-		return
-	} else {
-		log.Info("Does not have table")
-	}
-	// does not have table
-	// db.Set("ENGINE=InnoDB", "DEFAULT CHARSET=utf8").CreateTable(tablePtr)
-	// log.Info("Create table")
-}
-
-func testReflect(v interface{}) {
-	log.Debug("Type of v: %s", reflect.TypeOf(v));
+type SqlExample struct {
+	Id		int32				`db:"id"`
+	NName	sql.NullString		`db:"nul_name"`
+	NTime	mysql.NullTime		`db:"nul_time"`
+	NNum	sql.NullFloat64		`db:"nul_float"`
+	NBool	sql.NullBool		`db:"nul_bool"`
+	NInt	sql.NullInt64		`db:"nul_int"`
+	Int		int					`db:"int" json:"int_num"`
+	String	string				`db:"string" json:"str,omitempty"`
+	EmptyString	string			`json:"empty_str,omitempty"`
+	NoTagString	string
+	Ignore	string				`json:"-"`
+	Bool	bool				`json:"bool"`
+	Float	float32				`json:"float32"`
+	Time	time.Time			`json:"time"`
 }
 
 func main() {
-	log.Debug("Hello, gorm!")
+	item := SqlExample{}
+	item.Id = 10
+	item.NName = sql.NullString{String:"Andrew", Valid:true}
+	item.NTime = mysql.NullTime{Time:time.Now(), Valid:false}
+	item.NNum = sql.NullFloat64{Float64:1.23, Valid:false}
+	item.NBool = sql.NullBool{Bool:true, Valid:true}
+	item.NInt = sql.NullInt64{Int64:9999, Valid:true}
+	item.Int = 8888
+	item.String = "Hello, world!"
+	item.NoTagString = "empty string"
+	item.Ignore = "ignore string"
+	item.Bool = true
+	item.Float = 0.001
+	item.Time = time.Now()
 
-	db, err := gorm.Open("mysql", "tars:tars2015@tcp(10.0.4.11:3306)/db_gorm?charset-utf8&parseTime=True&loc=Local")
-	defer db.Close()
-	if err != nil {
-		log.Error("Error opening DB: %s", err.Error())
-	} else {
-		log.Info("Open DB OK!")
-	}
-
-	checkTableExist(db)
-	testReflect(db)
+	var ret string
+	// ret, _ = amcjson.SqlToJson(&item)
+	// log.Debug("json result: %s", ret)
+	ret, _ = amcjson.SqlToJson(item)
+	log.Debug("json result: %s", ret)
 	return
 }

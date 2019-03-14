@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 	"path/filepath"
-	"strconv"
 )
 
 func getCallerInfo(invoke_level int) (fileName string, line int, funcName string) {
@@ -38,7 +37,8 @@ func getTimeStr() string {
 func Debug(format string, v ...interface{}) {
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
-	fmt.Printf(datetime + " - DEBUG - " + file + ", " + strconv.Itoa(line) + ", " + function + "() - " + format + "\n", v...)
+	text := fmt.Sprintf(format, v...)
+	fmt.Printf("%s - DEBUG - %s, Line %d, %s() - %s\n", datetime, file, line, function, text)
 	return
 }
 
@@ -46,7 +46,8 @@ func Debug(format string, v ...interface{}) {
 func Info(format string, v ...interface{}) {
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
-	fmt.Printf(datetime + " - INFO  - " + file + ", " + strconv.Itoa(line) + ", " + function + "() - " + format + "\n", v...)
+	text := fmt.Sprintf(format, v...)
+	fmt.Printf("%s - INFO  - %s, Line %d, %s() - %s\n", datetime, file, line, function, text)
 	return
 }
 
@@ -54,7 +55,8 @@ func Info(format string, v ...interface{}) {
 func Warn(format string, v ...interface{}) {
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
-	fmt.Printf(datetime + " - WARN  - " + file + ", " + strconv.Itoa(line) + ", " + function + "() - " + format + "\n", v...)
+	text := fmt.Sprintf(format, v...)
+	fmt.Printf("%s - WARN  - %s, Line %d, %s() - %s\n", datetime, file, line, function, text)
 	return
 }
 
@@ -62,6 +64,7 @@ func Warn(format string, v ...interface{}) {
 func Error(format string, v ...interface{}) {
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
-	fmt.Printf(datetime + " - ERROR - " + file + ", " + strconv.Itoa(line) + ", " + function + "() - " + format + "\n", v...)
+	text := fmt.Sprintf(format, v...)
+	fmt.Printf("%s - ERROR - %s, Line %d, %s() - %s\n", datetime, file, line, function, text)
 	return
 }
