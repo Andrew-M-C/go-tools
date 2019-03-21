@@ -3,7 +3,7 @@ package _test
 import (
 	"time"
 	"github.com/Andrew-M-C/go-tools/log"
-	amcjson "github.com/Andrew-M-C/go-tools/json"
+	"github.com/Andrew-M-C/go-tools/jsonconv"
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 )
@@ -28,7 +28,7 @@ type SqlExample struct {
 func TestSqlToJson() {
 	item := SqlExample{}
 	item.Id = 10
-	item.NName = sql.NullString{String:"Andrew", Valid:true}
+	item.NName = sql.NullString{String:"中文", Valid:true}
 	item.NTime = mysql.NullTime{Time:time.Now(), Valid:false}
 	item.NNum = sql.NullFloat64{Float64:1.23, Valid:false}
 	item.NBool = sql.NullBool{Bool:true, Valid:true}
@@ -44,32 +44,36 @@ func TestSqlToJson() {
 	var ret string
 
 	// normal mode
-	ret, _ = amcjson.SqlToJson(&item)
+	ret, _ = jsonconv.SqlToJson(&item)
 	log.Debug("json result: %s", ret)
 
 	// test float digit count after decomal point
 	item.Float = 0.0
-	ret, _ = amcjson.SqlToJson(item)
+	ret, _ = jsonconv.SqlToJson(item)
 	log.Debug("json result: %s", ret)
 
 	// test ShowNull option
-	ret, _ = amcjson.SqlToJson(item, amcjson.Option{ShowNull: true})
+	ret, _ = jsonconv.SqlToJson(item, jsonconv.Option{ShowNull: true})
 	log.Debug("json result: %s", ret)
 
 	// test option of float digit count after decomal point
-	ret, _ = amcjson.SqlToJson(item, amcjson.Option{FloatDigits: 6, TimeDigits: 3})
+	ret, _ = jsonconv.SqlToJson(item, jsonconv.Option{FloatDigits: 6, TimeDigits: 3})
 	log.Debug("json result: %s", ret)
 
 	// test include mode
-	ret, _ = amcjson.SqlToJson(item, amcjson.Option{
-		FilterMode: amcjson.IncludeMode,
+	ret, _ = jsonconv.SqlToJson(item, jsonconv.Option{
+		FilterMode: jsonconv.IncludeMode,
 		FilterList: []string{"nul_name", "nul_time", "nul_float"} })
 	log.Debug("json result: %s", ret)
 
 	// test exclude mode
-	ret, _ = amcjson.SqlToJson(item, amcjson.Option{
-		FilterMode: amcjson.ExcludeMode,
+	ret, _ = jsonconv.SqlToJson(item, jsonconv.Option{
+		FilterMode: jsonconv.ExcludeMode,
 		FilterList: []string{"nul_name", "nul_time"} })
+	log.Debug("json result: %s", ret)
+
+	// ensure ascii
+	ret, _ = jsonconv.SqlToJson(&item, jsonconv.Option{EnsureAscii: true})
 	log.Debug("json result: %s", ret)
 	return
 }

@@ -22,6 +22,7 @@ const (
 
 type Option struct {
 	ShowNull		bool
+	EnsureAscii		bool
 	FloatDigits		uint8
 	TimeDigits		uint8
 	FilterMode		Filter
@@ -30,12 +31,13 @@ type Option struct {
 
 var dftOption = Option {
 	ShowNull: false,
+	EnsureAscii: false,
 	FloatDigits: 0,
 	TimeDigits: 0,
 	FilterMode: Normal,
 }
 
-func escapeJsonString(s string) string {
+func escapeJsonString(s string, ensureAscii bool) string {
 	b := bytes.Buffer{}
 	for _, chr := range s {
 		switch chr {
@@ -54,7 +56,11 @@ func escapeJsonString(s string) string {
 		case '\r':
 			b.WriteString("\\r")
 		default:
-			b.WriteRune(chr)
+			if ensureAscii && chr > '\u0127' {
+				b.WriteString(fmt.Sprintf("\\u%04x", chr))
+			} else {
+				b.WriteRune(chr)
+			}
 		}
 	}
 	return b.String()
@@ -81,7 +87,7 @@ func convertTimeToString(t time.Time, digits uint8) string {
 	}
 }
 
-func getFieldTag(field *reflect.StructField, filterMode Filter, filterMap map[string]int) string {
+func getFieldTag(field *reflect.StructField, filterMode Filter, filterMap map[string]int, ensureAscii bool) string {
 	tag := ""
 
 	// read from "json"
@@ -125,7 +131,7 @@ func getFieldTag(field *reflect.StructField, filterMode Filter, filterMap map[st
 	}
 
 	// done
-	return escapeJsonString(tag)
+	return escapeJsonString(tag, ensureAscii)
 }
 
 func processFieldInt64(tag string, i int64, valid bool, opt Option, keyList *[]string, valList *[]string) {
@@ -143,7 +149,7 @@ func processFieldInt64(tag string, i int64, valid bool, opt Option, keyList *[]s
 func processFieldString(tag string, s string, valid bool, opt Option, keyList *[]string, valList *[]string) {
 	if valid {
 		*keyList = append(*keyList, tag)
-		*valList = append(*valList, `"` + escapeJsonString(s) + `"`)
+		*valList = append(*valList, `"` + escapeJsonString(s, opt.EnsureAscii) + `"`)
 	} else {
 		if opt.ShowNull {
 			*keyList = append(*keyList, tag)
@@ -193,7 +199,7 @@ func processFieldTime(tag string, t time.Time, valid bool, opt Option, keyList *
 }
 
 func processField(field *reflect.StructField, value reflect.Value, opt Option, filterMap map[string]int, keyList *[]string, valList *[]string) {
-	tag := getFieldTag(field, opt.FilterMode, filterMap)
+	tag := getFieldTag(field, opt.FilterMode, filterMap, opt.EnsureAscii)
 	if str.Empty(tag) {		// skip ignored fields
 		return
 	}

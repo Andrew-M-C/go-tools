@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	// test.TestSqlToJson()
+	test.TestSqlToJson()
 	test.TestJsonObj()
 	log.Info("demo done")
 	return

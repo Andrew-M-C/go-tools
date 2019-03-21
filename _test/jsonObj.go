@@ -15,8 +15,11 @@ var strStandard = `{
 	"an-object": {
 		"sub-string": "string in an object",
 		"sub-object": {
-			"another-sub-string": "string in an object in an object",
-			"another-sub-array": [1, "array", true, null]
+			"another-sub-string": "\"string\" in an object in an object",
+			"another-sub-array": [1, "string in sub
+array", true, null],
+			"complex":"\u4e2d\t\u6587",
+			"illegel":"illegal\yillegal"
 		}
 	},
 	"an-array": [
@@ -27,19 +30,28 @@ var strStandard = `{
 	]
 }`
 
-// TODO: "string in an object in an object" 后面的逗号如果没有了，会有问题，但是代码里面并没有检查出来
+func testKeyInObject(obj *jsonconv.JsonObj, key interface{}, keys... interface{}) {
+	child, err := obj.Get(key, keys...)
+	if err != nil {
+		log.Error("Failed to get child: %s", err.Error())
+	} else {
+		if child.IsString() {
+			log.Info("Get child, type: %s, value '%s'", child.TypeString(), child.String())
+		} else {
+			log.Info("Get child, type: %s", child.TypeString())
+		}
+	}
+}
 
 func TestJsonObj() {
 	obj, err := jsonconv.NewFromString(strStandard)
 	if err != nil {
 		log.Error("Failed to parse json: %s", err.Error())
 	} else {
-		child, err := obj.GetByKey("an-object", "sub-object", "another-sub-string")
-		if err != nil {
-			log.Error("Failed to get child: %s", err.Error())
-		} else {
-			log.Info("Get child, type: %s, value '%s'", child.TypeString(), child.String())
-		}
+		testKeyInObject(obj, "an-object", "sub-object", "complex")
+		testKeyInObject(obj, "an-object", "sub-object", "illegal")
+		testKeyInObject(obj, "an-array", 0, "sub-string")
+		testKeyInObject(obj, "an-object", "sub-object", "another-sub-array", 1)
 	}
 	return
 }

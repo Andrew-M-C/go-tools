@@ -2,9 +2,11 @@ package jsonconv
 
 import (
 	"github.com/buger/jsonparser"
-	"github.com/Andrew-M-C/go-tools/log"
+	// "github.com/Andrew-M-C/go-tools/log"
 	"strconv"
 	"strings"
+	"bytes"
+	"reflect"
 )
 
 // data definitions same as jsonparser
@@ -33,6 +35,65 @@ type JsonObj struct {
 	objChildren		map[string]*JsonObj
 	// array children
 	arrChildren		[]*JsonObj
+}
+
+// ====================
+// internal functions
+
+var escapeMap = map[rune]rune {
+	'"': '"',
+	'/': '/',
+	'b': '\b',
+	'f': '\f',
+	't': '\t',
+	'n': '\n',
+}
+
+func stringFromEscapedBytes(input []byte) (string, error) {
+	b := bytes.Buffer{}
+	s := string(input)
+	escaping := false
+	skip := 0
+
+	for i, chr := range s {
+		if skip > 0 {
+			skip --
+		} else if escaping {
+			escaping = false
+			switch chr {
+			case '"', '/', 'b', 'f', 't', 'n', 'r':
+				write_chr, exist := escapeMap[chr]
+				if exist {
+					b.WriteRune(write_chr)
+				}
+			case 'u':
+				// parse unicode
+				sub_str := s[i+1:i+5]
+				unicode, err := strconv.ParseInt(sub_str, 16, 32)
+				if err != nil {
+					// err
+					// log.Error("err: %s", err.Error())
+					return "", JsonFormatError
+				} else {
+					skip = 4
+					b.WriteRune(rune(unicode))
+				}
+			default:
+				// illegal character
+				// log.Error("Illegal escaped char: %c", chr)
+				return "", JsonFormatError
+			}
+		} else {
+			switch chr {
+			case '\\':
+				// get ready to escape
+				escaping = true
+			default:
+				b.WriteRune(chr)
+			}
+		}
+	}
+	return b.String(), nil
 }
 
 // ====================
@@ -105,7 +166,8 @@ func NewFromString(s string) (*JsonObj, error) {
 				return nil, JsonFormatError
 			}
 		default:
-			log.Debug("Skip: %c", chr)
+			// log.Debug("Skip: %c", chr)
+			// skip
 		}
 	}
 	return nil, JsonFormatError
@@ -165,41 +227,51 @@ func NewArrayObject() *JsonObj {
 // parse functions
 
 func (obj *JsonObj) parseObject(data []byte) error {
+	add_child := func (obj *JsonObj, key []byte, child *JsonObj) {
+		key_str, key_err := stringFromEscapedBytes(key)
+		if key_err == nil {
+			obj.objChildren[key_str] = child
+		}
+	}
+
 	jsonparser.ObjectEach(data, func(key []byte, value []byte, dataType jsonparser.ValueType, _ int) error {
-		log.Debug("key: %s", string(key))
-		log.Debug("value: %s", string(value))
+		// log.Debug("key: %s", string(key))
+		// log.Debug("value: %s", string(value))
 		switch dataType {
 		case jsonparser.String:
-			child := NewStringObject(string(value))
-			obj.objChildren[string(key)] = child
+			str_value, err := stringFromEscapedBytes(value)
+			if err == nil {
+				child := NewStringObject(str_value)
+				add_child(obj, key, child)
+			}
 		case jsonparser.Number:
 			child := new(JsonObj)
 			child.valueType = Number
 			child.origBytes = value
-			obj.objChildren[string(key)] = child
+			add_child(obj, key, child)
 		case jsonparser.Object:
 			child := NewObjectObject()
 			err := child.parseObject(value)
 			if err == nil {
-				obj.objChildren[string(key)] = child
+				add_child(obj, key, child)
 			}
 		case jsonparser.Array:
 			child := NewArrayObject()
 			err := child.parseArray(value)
 			if err == nil {
-				obj.objChildren[string(key)] = child
+				add_child(obj, key, child)
 			}
 		case jsonparser.Boolean:
 			b, err := strconv.ParseBool(string(value))
 			if err == nil {
 				child := NewBoolObject(b)
-				obj.objChildren[string(key)] = child
+				add_child(obj, key, child)
 			}
 		case jsonparser.Null:
 			child := NewNullObject()
-			obj.objChildren[string(key)] = child
+			add_child(obj, key, child)
 		default:
-			log.Debug("Invalid type: %d", int(dataType))
+			// log.Debug("Invalid type: %d", int(dataType))
 		}
 		return nil
 	})
@@ -210,8 +282,11 @@ func (obj *JsonObj) parseArray(data []byte) error {
 	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, _ int, _ error) {
 		switch dataType {
 		case jsonparser.String:
-			child := NewStringObject(string(value))
-			obj.arrChildren = append(obj.arrChildren, child)
+			str_value, err := stringFromEscapedBytes(value)
+			if err == nil {
+				child := NewStringObject(str_value)
+				obj.arrChildren = append(obj.arrChildren, child)
+			}
 		case jsonparser.Number:
 			child := new(JsonObj)
 			child.valueType = Number
@@ -358,7 +433,9 @@ func (obj *JsonObj) GetByKey(keys ...string) (*JsonObj, error) {
 }
 
 func (obj *JsonObj) GetAtIndex(index int) (*JsonObj, error) {
-	if obj.valueType == Array {
+	if index < 0 {
+		return nil, ParaError
+	} else if obj.valueType == Array {
 		if index < len(obj.arrChildren) {
 			return obj.arrChildren[index], nil
 		} else {
@@ -367,4 +444,79 @@ func (obj *JsonObj) GetAtIndex(index int) (*JsonObj, error) {
 	} else {
 		return nil, NotAnArrayError
 	}
+}
+
+func (obj *JsonObj) Get(first interface{}, keys ...interface{}) (*JsonObj, error) {
+	switch first.(type) {
+	case string:
+		child, err := obj.GetByKey(first.(string))
+		if err != nil {
+			return nil, err
+		} else if len(keys) == 1 {
+			return child.Get(keys[0])
+		} else if len(keys) > 1 {
+			return child.Get(keys[0], keys[1:]...)
+		} else {
+			return child, nil
+		}
+	case int8, uint8, int16, uint16, int32, uint32, int64, uint64, int, uint:
+		value := reflect.ValueOf(first)
+		index := int(value.Int())
+		child, err := obj.GetAtIndex(index)
+		if err != nil {
+			return nil, err
+		} else if len(keys) == 1 {
+			return child.Get(keys[0])
+		} else if len(keys) > 1 {
+			return child.Get(keys[0], keys[1:]...)
+		} else {
+			return child, nil
+		}
+	default:
+		return nil, ParaError
+	}
+}
+
+func (obj *JsonObj) GetString(first interface{}, keys ...interface{}) (string, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return "", err
+	}
+	if false == child.IsString() {
+		return "", NotAStringError
+	}
+	return child.String(), nil
+}
+
+func (obj *JsonObj) GetInt(first interface{}, keys ...interface{}) (int64, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return 0, err
+	}
+	if false == child.IsNumber() {
+		return 0, NotANumberError
+	}
+	return child.Int(), nil
+}
+
+func (obj *JsonObj) GetFloat(first interface{}, keys ...interface{}) (float64, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return 0.0, err
+	}
+	if false == child.IsNumber() {
+		return 0.0, NotANumberError
+	}
+	return child.Float(), nil
+}
+
+func (obj *JsonObj) GetBool(first interface{}, keys ...interface{}) (bool, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return false, err
+	}
+	if false == child.IsBool() {
+		return false, NotABoolError
+	}
+	return child.Bool(), nil
 }
