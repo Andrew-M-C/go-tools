@@ -53,5 +53,13 @@ func TestJsonObj() {
 		testKeyInObject(obj, "an-array", 0, "sub-string")
 		testKeyInObject(obj, "an-object", "sub-object", "another-sub-array", 1)
 	}
+
+	json_str := ""
+	json_str, _ = obj.Marshal()
+	log.Info("re-package json: %s", json_str)
+	json_str, _ = obj.Marshal(jsonconv.Option{EnsureAscii: true})
+	log.Info("re-package json: %s", json_str)
+	json_str, _ = obj.Marshal(jsonconv.Option{FloatDigits: 2})
+	log.Info("re-package json: %s", json_str)
 	return
 }

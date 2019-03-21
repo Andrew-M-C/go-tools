@@ -23,7 +23,6 @@ const (
 )
 
 type JsonObj struct {
-	origBytes		[]byte
 	// type
 	valueType		jsonparser.ValueType
 	// values
@@ -98,6 +97,10 @@ func stringFromEscapedBytes(input []byte) (string, error) {
 
 // ====================
 // New() functions
+
+func NewByUnmarshal(s string) (*JsonObj, error) {
+	return NewFromString(s)
+}
 
 func NewFromString(s string) (*JsonObj, error) {
 	var obj *JsonObj
@@ -246,8 +249,10 @@ func (obj *JsonObj) parseObject(data []byte) error {
 			}
 		case jsonparser.Number:
 			child := new(JsonObj)
+			str_value := string(value)
 			child.valueType = Number
-			child.origBytes = value
+			child.intValue, _ = strconv.ParseInt(str_value, 10, 64)
+			child.floatValue, _ = strconv.ParseFloat(str_value, 64)
 			add_child(obj, key, child)
 		case jsonparser.Object:
 			child := NewObjectObject()
@@ -289,8 +294,10 @@ func (obj *JsonObj) parseArray(data []byte) error {
 			}
 		case jsonparser.Number:
 			child := new(JsonObj)
+			str_value := string(value)
 			child.valueType = Number
-			child.origBytes = value
+			child.intValue, _ = strconv.ParseInt(str_value, 10, 64)
+			child.floatValue, _ = strconv.ParseFloat(str_value, 64)
 			obj.arrChildren = append(obj.arrChildren, child)
 		case jsonparser.Object:
 			child := NewObjectObject()
@@ -345,6 +352,13 @@ func (obj *JsonObj) Float() float64 {
 }
 
 func (obj *JsonObj) Bool() bool {
+	if obj.valueType == Boolean {
+		return obj.boolValue
+	}
+	return false
+}
+
+func (obj *JsonObj) Boolean() bool {
 	if obj.valueType == Boolean {
 		return obj.boolValue
 	}
@@ -519,4 +533,90 @@ func (obj *JsonObj) GetBool(first interface{}, keys ...interface{}) (bool, error
 		return false, NotABoolError
 	}
 	return child.Bool(), nil
+}
+
+// ====================
+// Marshal
+func Marshal(obj *JsonObj, opts...
+	Option) (string, error) {
+	if nil == obj {
+		return "", ParaError
+	}
+	return obj.Marshal(opts...)
+}
+
+func (obj *JsonObj)Marshal(opts... Option) (string, error) {
+	var opt *Option
+	if len(opts) > 0 {
+		opt = &(opts[0])
+	} else {
+		opt = &dftOption
+	}
+
+	switch obj.valueType {
+	case String:
+		return `"` + escapeJsonString(obj.String(), opt.EnsureAscii) + `"`, nil
+	case Number:
+		i := obj.Int()
+		f := obj.Float()
+		if float64(i) == f {
+			return strconv.FormatInt(i, 10), nil
+		} else {
+			return convertFloatToString(f, opt.FloatDigits), nil
+		}
+	case Null:
+		return "null", nil
+	case Boolean:
+		if obj.Bool() {
+			return "true", nil
+		} else {
+			return "false", nil
+		}
+	case Object:
+		is_first := true
+		b := bytes.Buffer{}
+		b.WriteRune('{')
+		for key, child := range obj.objChildren {
+			if child.IsNull() && false == opt.ShowNull {
+				// do nothing
+			} else {
+				if is_first {
+					is_first = false
+				} else {
+					b.WriteRune(',')
+				}
+				b.WriteRune('"')
+				b.WriteString(escapeJsonString(key, opt.EnsureAscii))
+				b.WriteRune('"')
+				b.WriteRune(':')
+
+				child_str, _ := child.Marshal(*opt)
+				b.WriteString(child_str)
+			}
+		}
+		b.WriteRune('}')
+		return b.String(), nil
+	case Array:
+		is_first := true
+		b := bytes.Buffer{}
+		b.WriteRune('[')
+		for _, child := range obj.arrChildren {
+			if child.IsNull() && false == opt.ShowNull {
+				// do nothing
+			} else {
+				if is_first {
+					is_first = false
+				} else {
+					b.WriteRune(',')
+				}
+				child_str, _ := child.Marshal(*opt)
+				b.WriteString(child_str)
+			}
+		}
+		b.WriteRune(']')
+		return b.String(), nil
+	default:
+		// do nothing
+		return "", JsonTypeError
+	}
 }
