@@ -6,6 +6,6 @@ import (
 )
 
 func TestStr() {
-	s := str.Join(",", "a", "BB", "ccc", "4444")
+	s := str.JoinBy(",", "a", "BB", "ccc", "4444")
 	log.Debug("Join result: %s", s)
 }
