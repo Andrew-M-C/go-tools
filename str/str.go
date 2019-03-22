@@ -11,3 +11,7 @@ func Empty(s string) bool {
 func Valid(s string) bool {
 	return 0 != strings.Compare(s, "")
 }
+
+func Join(sep string, a ...string) string {
+	return strings.Join(a, sep)
+}

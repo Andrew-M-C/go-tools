@@ -537,8 +537,7 @@ func (obj *JsonObj) GetBool(first interface{}, keys ...interface{}) (bool, error
 
 // ====================
 // Marshal
-func Marshal(obj *JsonObj, opts...
-	Option) (string, error) {
+func Marshal(obj *JsonObj, opts... Option) (string, error) {
 	if nil == obj {
 		return "", ParaError
 	}
