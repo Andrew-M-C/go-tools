@@ -30,7 +30,7 @@ array", true, null],
 	]
 }`
 
-func testKeyInObject(obj *jsonconv.JsonObj, key interface{}, keys... interface{}) {
+func testKeyInObject(obj *jsonconv.JsonValue, key interface{}, keys... interface{}) {
 	child, err := obj.Get(key, keys...)
 	if err != nil {
 		log.Error("Failed to get child: %s", err.Error())
@@ -43,7 +43,7 @@ func testKeyInObject(obj *jsonconv.JsonObj, key interface{}, keys... interface{}
 	}
 }
 
-func TestJsonObj() {
+func TestJsonValue() {
 	obj, err := jsonconv.NewFromString(strStandard)
 	if err != nil {
 		log.Error("Failed to parse json: %s", err.Error())
