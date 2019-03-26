@@ -2,7 +2,7 @@ package jsonconv
 
 import (
 	"github.com/buger/jsonparser"
-	"github.com/Andrew-M-C/go-tools/log"
+	// "github.com/Andrew-M-C/go-tools/log"
 	"strconv"
 	"strings"
 	"bytes"
@@ -365,6 +365,16 @@ func (obj *JsonValue) Boolean() bool {
 	return false
 }
 
+func (obj *JsonValue) Length() int {
+	if obj.valueType == Array {
+		return len(obj.arrChildren)
+	} else if obj.valueType == Object {
+		return len(obj.objChildren)
+	} else {
+		return 0
+	}
+}
+
 // types
 func (obj *JsonValue) Type() ValueType {
 	return ValueType(obj.valueType)
@@ -406,7 +416,7 @@ func (obj *JsonValue) IsObject() bool {
 }
 
 func (obj *JsonValue) IsArray() bool {
-	return obj.valueType == Object
+	return obj.valueType == Array
 }
 
 func (obj *JsonValue) IsBoollean() bool {
@@ -653,10 +663,10 @@ func (obj *JsonValue) Delete(first interface{}, keys ...interface{}) error {
 		}
 		// delect object
 		last_key_str := (*last_key).(string)
-		log.Debug("Delete key: %s", last_key_str)
+		// log.Debug("Delete key: %s", last_key_str)
 		_, err = parent.Get(last_key_str)
 		if err != nil {
-			log.Debug("key %s not found", last_key_str)
+			// log.Debug("key %s not found", last_key_str)
 			return err
 		}
 		delete(parent.objChildren, last_key_str)
@@ -764,10 +774,41 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 			child, err = this.Get(first, keys[:keys_count-2]...)
 		}
 
+
 		if err != nil {
 			return err
 		} else {
 			return child.Set(newOne, keys[keys_count-1])
 		}
 	}
+}
+
+// ====================
+// foreach
+func (this *JsonValue) ArrayForeach(callback func(index int, value *JsonValue) error) error {
+	if false == this.IsArray() {
+		// log.Error("object is not an array")
+		return NotAnArrayError
+	}
+	// log.Debug("array size: %d", len(this.arrChildren))
+	for i, val := range this.arrChildren {
+		err := callback(i, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (this *JsonValue) ObjectForeach(callback func(key string, value *JsonValue) error) error {
+	if false == this.IsObject() {
+		return NotAnObjectError
+	}
+	for k, v := range this.objChildren {
+		err := callback(k, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

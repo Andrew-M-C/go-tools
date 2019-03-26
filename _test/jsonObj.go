@@ -18,8 +18,7 @@ var strStandard = `{
 			"another-sub-string": "\"string\" in an object in an object",
 			"another-sub-array": [1, "string in sub
 array", true, null],
-			"complex":"\u4e2d\t\u6587",
-			"illegel":"illegal\yillegal"
+			"complex":"\u4e2d\t\u6587"
 		}
 	},
 	"an-array": [
@@ -44,12 +43,13 @@ func testKeyInObject(obj *jsonconv.JsonValue, key interface{}, keys... interface
 }
 
 func TestJsonValue() {
+	log.Info("======== Start testing JsonValue")
 	obj, err := jsonconv.NewFromString(strStandard)
 	if err != nil {
 		log.Error("Failed to parse json: %s", err.Error())
 	} else {
 		testKeyInObject(obj, "an-object", "sub-object", "complex")
-		testKeyInObject(obj, "an-object", "sub-object", "illegal")
+		// testKeyInObject(obj, "an-object", "sub-object", "illegal")
 		testKeyInObject(obj, "an-array", 0, "sub-string")
 		testKeyInObject(obj, "an-object", "sub-object", "another-sub-array", 1)
 	}
@@ -61,5 +61,26 @@ func TestJsonValue() {
 	log.Info("re-package json: %s", json_str)
 	json_str, _ = obj.Marshal(jsonconv.Option{FloatDigits: 2})
 	log.Info("re-package json: %s", json_str)
+
+	// test foreach
+	log.Info("Now test object foreach")
+	obj.ObjectForeach(func (key string, value *jsonconv.JsonValue) error {
+		log.Info("Key - %s, type %s", key, value.TypeString())
+		return nil
+	})
+
+	log.Info("Now test array foreach")
+	arr, err := obj.Get("an-array")
+	log.Info("array type: %s", arr.TypeString())
+	if err != nil {
+		log.Error("error: %s", err.Error())
+	} else {
+		arr.ArrayForeach(func (index int, value *jsonconv.JsonValue) error {
+			log.Info("[%d] type %s", index, value.TypeString())
+			return nil
+		})
+	}
+
+
 	return
 }
