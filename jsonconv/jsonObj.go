@@ -112,7 +112,7 @@ func NewFromString(s string) (*JsonValue, error) {
 		case ' ', '\r', '\n', '\t':
 			// continue
 		case '{':
-			obj = NewObjectObject()
+			obj = NewObject()
 			err = obj.parseObject([]byte(s[index:]))
 			if err != nil {
 				return nil, err
@@ -120,7 +120,7 @@ func NewFromString(s string) (*JsonValue, error) {
 				return obj, nil
 			}
 		case '[':
-			obj = NewArrayObject()
+			obj = NewArray()
 			err = obj.parseArray([]byte(s[index:]))
 			if err != nil {
 				return nil, err
@@ -176,14 +176,14 @@ func NewFromString(s string) (*JsonValue, error) {
 	return nil, JsonFormatError
 }
 
-func NewStringObject(s string) *JsonValue {
+func NewString(s string) *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = String
 	obj.stringValue = s
 	return obj
 }
 
-func NewIntObject(i int64) *JsonValue {
+func NewInt(i int64) *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Number
 	obj.intValue = i
@@ -191,7 +191,7 @@ func NewIntObject(i int64) *JsonValue {
 	return obj
 }
 
-func NewFloatObject(f float64) *JsonValue {
+func NewFloat(f float64) *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Number
 	obj.intValue = int64(f)
@@ -206,20 +206,20 @@ func NewBoolObject(b bool) *JsonValue {
 	return obj
 }
 
-func NewNullObject() *JsonValue {
+func NewNull() *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Null
 	return obj
 }
 
-func NewObjectObject() *JsonValue {
+func NewObject() *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Object
 	obj.objChildren = make(map[string]*JsonValue)
 	return obj
 }
 
-func NewArrayObject() *JsonValue {
+func NewArray() *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Array
 	obj.arrChildren = make([]*JsonValue, 0, 10)
@@ -238,16 +238,19 @@ func (obj *JsonValue) parseObject(data []byte) error {
 	}
 
 	jsonparser.ObjectEach(data, func(key []byte, value []byte, dataType jsonparser.ValueType, _ int) error {
+		// log.Debug("----------")
 		// log.Debug("key: %s", string(key))
 		// log.Debug("value: %s", string(value))
 		switch dataType {
 		case jsonparser.String:
+			// log.Debug("string")
 			str_value, err := stringFromEscapedBytes(value)
 			if err == nil {
-				child := NewStringObject(str_value)
+				child := NewString(str_value)
 				add_child(obj, key, child)
 			}
 		case jsonparser.Number:
+			// log.Debug("number")
 			child := new(JsonValue)
 			str_value := string(value)
 			child.valueType = Number
@@ -255,25 +258,35 @@ func (obj *JsonValue) parseObject(data []byte) error {
 			child.floatValue, _ = strconv.ParseFloat(str_value, 64)
 			add_child(obj, key, child)
 		case jsonparser.Object:
-			child := NewObjectObject()
+			// log.Debug("object")
+			child := NewObject()
 			err := child.parseObject(value)
-			if err == nil {
+			if err != nil {
+				// log.Error("Failed to parse object: %s", err.Error())
+			} else {
+				// log.Debug("%s ---- object size: %d", string(key), child.Length())
 				add_child(obj, key, child)
 			}
 		case jsonparser.Array:
-			child := NewArrayObject()
+			// log.Debug("array")
+			child := NewArray()
 			err := child.parseArray(value)
-			if err == nil {
+			if err != nil {
+				// log.Error("Failed to parse array: %s", err.Error())
+			} else {
+				// log.Debug("%s ---- array size: %d", string(key), child.Length())
 				add_child(obj, key, child)
 			}
 		case jsonparser.Boolean:
+			// log.Debug("bool")
 			b, err := strconv.ParseBool(string(value))
 			if err == nil {
 				child := NewBoolObject(b)
 				add_child(obj, key, child)
 			}
 		case jsonparser.Null:
-			child := NewNullObject()
+			// log.Debug("null")
+			child := NewNull()
 			add_child(obj, key, child)
 		default:
 			// log.Debug("Invalid type: %d", int(dataType))
@@ -289,7 +302,7 @@ func (obj *JsonValue) parseArray(data []byte) error {
 		case jsonparser.String:
 			str_value, err := stringFromEscapedBytes(value)
 			if err == nil {
-				child := NewStringObject(str_value)
+				child := NewString(str_value)
 				obj.arrChildren = append(obj.arrChildren, child)
 			}
 		case jsonparser.Number:
@@ -300,13 +313,13 @@ func (obj *JsonValue) parseArray(data []byte) error {
 			child.floatValue, _ = strconv.ParseFloat(str_value, 64)
 			obj.arrChildren = append(obj.arrChildren, child)
 		case jsonparser.Object:
-			child := NewObjectObject()
+			child := NewObject()
 			err := child.parseObject(value)
 			if err == nil {
 				obj.arrChildren = append(obj.arrChildren, child)
 			}
 		case jsonparser.Array:
-			child := NewArrayObject()
+			child := NewArray()
 			err := child.parseArray(value)
 			if err == nil {
 				obj.arrChildren = append(obj.arrChildren, child)
@@ -318,7 +331,7 @@ func (obj *JsonValue) parseArray(data []byte) error {
 				obj.arrChildren = append(obj.arrChildren, child)
 			}
 		case jsonparser.Null:
-			child := NewNullObject()
+			child := NewNull()
 			obj.arrChildren = append(obj.arrChildren, child)
 		}
 		return
@@ -458,9 +471,10 @@ func (obj *JsonValue) GetByKey(keys ...string) (*JsonValue, error) {
 
 func (obj *JsonValue) GetAtIndex(index int) (*JsonValue, error) {
 	if obj.valueType == Array {
-		if index >= 0 && index < len(obj.objChildren) {
+		if index >= 0 && index < obj.Length() {
 			return obj.arrChildren[index], nil
 		} else {
+			// log.Error("request index %d, but length is %d", index, obj.Length())
 			return nil, IndexOutOfBoundsError
 		}
 	} else {
@@ -751,8 +765,10 @@ func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...inte
 }
 
 func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interface{}) error {
+	// log.Debug("Set \"%v\" (%v)", first, keys)
 	keys_count := len(keys)
-	if 0 == keys_count {
+	switch keys_count {
+	case 0:
 		switch first.(type) {
 		case string:
 			if this.IsObject() {
@@ -760,26 +776,27 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 				this.objChildren[key] = newOne
 				return nil
 			} else {
+				// log.Error("Not an object")
 				return NotAnObjectError
 			}
 		default:
+			// log.Error("leaf not a string")
 			return DataTypeError
 		}
-	} else {
-		var err error
-		var child *JsonValue
-		if 1 == keys_count {
-			child, err = this.Get(first, keys[0])
-		} else {
-			child, err = this.Get(first, keys[:keys_count-2]...)
-		}
-
-
+	case 1:
+		child, err := this.Get(first)
 		if err != nil {
+			// log.Error("Failed to get: %s", err.Error())
 			return err
-		} else {
-			return child.Set(newOne, keys[keys_count-1])
 		}
+		return child.Set(newOne, keys[0])
+	default:
+		child, err := this.Get(first)
+		if err != nil {
+			// log.Error("Failed to get: %s", err.Error())
+			return err
+		}
+		return child.Set(newOne, keys[0], keys[1:]...)
 	}
 }
 

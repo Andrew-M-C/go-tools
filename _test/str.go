@@ -6,7 +6,7 @@ import (
 )
 
 func TestStr() {
-	log.Info("Now test str tools")
+	log.Info("====== Now test str tools")
 	s := str.JoinBy(",", "a", "BB", "ccc", "4444")
 	log.Debug("Join result: %s", s)
 }

@@ -22,7 +22,14 @@ array", true, null],
 		}
 	},
 	"an-array": [
-		{"sub-string": "string in an object in an array"},
+		{
+			"sub-string": "string in an object in an array",
+			"sub-sub-array": [
+				{
+					"sub-sub-string": "string in an object in an array in an object in an string"
+				}
+			]
+		},
 		56789,
 		false,
 		null
@@ -30,6 +37,7 @@ array", true, null],
 }`
 
 func testKeyInObject(obj *jsonconv.JsonValue, key interface{}, keys... interface{}) {
+	log.Info("Test %v %v", key, keys)
 	child, err := obj.Get(key, keys...)
 	if err != nil {
 		log.Error("Failed to get child: %s", err.Error())
@@ -50,7 +58,7 @@ func TestJsonValue() {
 	} else {
 		testKeyInObject(obj, "an-object", "sub-object", "complex")
 		// testKeyInObject(obj, "an-object", "sub-object", "illegal")
-		testKeyInObject(obj, "an-array", 0, "sub-string")
+		testKeyInObject(obj, "an-array", 0, "sub-string")		// ERROR OCCURRED !!!
 		testKeyInObject(obj, "an-object", "sub-object", "another-sub-array", 1)
 	}
 
@@ -81,6 +89,18 @@ func TestJsonValue() {
 		})
 	}
 
+	// test modification
+	err = obj.Set(jsonconv.NewString("THIS IS A FULL NEW STRING"), "an-array", 0, "sub-string")
+	if err != nil {
+		log.Error("Failed to set: %s", err.Error())
+	}
+	err = obj.Set(jsonconv.NewString("THIS IS ANOTHER FULL NEW STRING"), "an-array", 0, "sub-sub-array", 0, "sub-sub-string")
+	if err != nil {
+		log.Error("Failed to set: %s", err.Error())
+	}
+	json_str, _ = obj.Marshal()
+	log.Info("new json after modification: %s", json_str)
 
+	// return
 	return
 }

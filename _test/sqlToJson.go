@@ -26,6 +26,7 @@ type SqlExample struct {
 }
 
 func TestSqlToJson() {
+	log.Info("====== now test SqlToJson")
 	item := SqlExample{}
 	item.Id = 10
 	item.NName = sql.NullString{String:"中文", Valid:true}
