@@ -199,7 +199,14 @@ func NewFloat(f float64) *JsonValue {
 	return obj
 }
 
-func NewBoolObject(b bool) *JsonValue {
+func NewBool(b bool) *JsonValue {
+	obj := new(JsonValue)
+	obj.valueType = Boolean
+	obj.boolValue = b
+	return obj
+}
+
+func NewBoolean(b bool) *JsonValue {
 	obj := new(JsonValue)
 	obj.valueType = Boolean
 	obj.boolValue = b
@@ -281,7 +288,7 @@ func (obj *JsonValue) parseObject(data []byte) error {
 			// log.Debug("bool")
 			b, err := strconv.ParseBool(string(value))
 			if err == nil {
-				child := NewBoolObject(b)
+				child := NewBool(b)
 				add_child(obj, key, child)
 			}
 		case jsonparser.Null:
@@ -327,7 +334,7 @@ func (obj *JsonValue) parseArray(data []byte) error {
 		case jsonparser.Boolean:
 			b, err := strconv.ParseBool(string(value))
 			if err == nil {
-				child := NewBoolObject(b)
+				child := NewBool(b)
 				obj.arrChildren = append(obj.arrChildren, child)
 			}
 		case jsonparser.Null:
