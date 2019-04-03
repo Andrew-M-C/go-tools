@@ -807,6 +807,30 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 	}
 }
 
+func (this *JsonValue) SetString(s string, first interface{}, keys ...interface{}) error {
+	return this.Set(NewString(s), first, keys...)
+}
+
+func (this *JsonValue) SetBoolean(b bool, first interface{}, keys ...interface{}) error {
+	return this.Set(NewBool(b), first, keys...)
+}
+
+func (this *JsonValue) SetBool(b bool, first interface{}, keys ...interface{}) error {
+	return this.Set(NewBool(b), first, keys...)
+}
+
+func (this *JsonValue) SetNull(first interface{}, keys ...interface{}) error {
+	return this.Set(NewNull(), first, keys...)
+}
+
+func (this *JsonValue) SetInt(i int64, first interface{}, keys ...interface{}) error {
+	return this.Set(NewInt(i), first, keys...)
+}
+
+func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{}) error {
+	return this.Set(NewFloat(f), first, keys...)
+}
+
 // ====================
 // foreach
 func (this *JsonValue) ArrayForeach(callback func(index int, value *JsonValue) error) error {
