@@ -8,6 +8,52 @@ import (
 	"path/filepath"
 )
 
+var (
+	shouldDebug	= false
+	shouldInfo	= true
+	shouldWarn	= true
+	shouldError	= true
+)
+
+const (
+	LEVEL_DEBUG = iota
+	LEVEL_INFO
+	LEVEL_WARN
+	LEVEL_ERROR
+	LEVEL_NONE
+)
+
+func SetLogLevel(level int) {
+	switch level {
+	case LEVEL_DEBUG:
+		shouldDebug = true
+		shouldInfo = true
+		shouldWarn = true
+		shouldError = true
+	case LEVEL_INFO:
+		shouldDebug = false
+		shouldInfo = true
+		shouldWarn = true
+		shouldError = true
+	case LEVEL_WARN:
+		shouldDebug = false
+		shouldInfo = false
+		shouldWarn = true
+		shouldError = true
+	case LEVEL_ERROR:
+		shouldDebug = false
+		shouldInfo = false
+		shouldWarn = false
+		shouldError = true
+	default:
+		shouldDebug = false
+		shouldInfo = false
+		shouldWarn = false
+		shouldError = false
+	}
+	return
+}
+
 func getCallerInfo(invoke_level int) (fileName string, line int, funcName string) {
 	funcName = "FILE"
 	line = -1
@@ -35,6 +81,9 @@ func getTimeStr() string {
 }
 
 func Debug(format string, v ...interface{}) {
+	if false == shouldDebug {
+		return
+	}
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
 	text := fmt.Sprintf(format, v...)
@@ -44,6 +93,9 @@ func Debug(format string, v ...interface{}) {
 
 
 func Info(format string, v ...interface{}) {
+	if false == shouldInfo {
+		return
+	}
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
 	text := fmt.Sprintf(format, v...)
@@ -53,6 +105,9 @@ func Info(format string, v ...interface{}) {
 
 
 func Warn(format string, v ...interface{}) {
+	if false == shouldWarn {
+		return
+	}
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
 	text := fmt.Sprintf(format, v...)
@@ -62,6 +117,9 @@ func Warn(format string, v ...interface{}) {
 
 
 func Error(format string, v ...interface{}) {
+	if false == shouldError {
+		return
+	}
 	datetime := getTimeStr()
 	file, line, function := getCallerInfo(0);
 	text := fmt.Sprintf(format, v...)

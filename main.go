@@ -9,6 +9,9 @@ func main() {
 	test.TestSqlToJson()
 	test.TestJsonValue()
 	test.TestStr()
+	for i := 0; i < 200; i ++ {
+		test.TestOrigJsonEffenciency()
+	}
 	log.Info("demo done")
 	return
 }
