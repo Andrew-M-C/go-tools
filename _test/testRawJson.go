@@ -45,7 +45,7 @@ func TestOrigJsonEffenciency() {
 	}
 
 	var start time.Time
-	json_bytes := []byte("{\"str\": \"hello, json\", \"int\": 123, \"float\": 10.2, \"array\": [1, \"2\"], \"obj\": {\"num\": 10}, \"bool\": true, \"int64\": 4418489049307132905}")
+	json_bytes := []byte(`{"str": "hello, json", "int": 123, "float": 10.2, "array": [1, "2"], "obj": {"num": 10}, "bool": true, "int64": 4418489049307132905, "unicode":"字符串"}`)
 	var func_parse_array func([]interface{}, int)
 	var func_parse_obj func(map[string]interface{}, int)
 

@@ -39,60 +39,131 @@ type JsonValue struct {
 // ====================
 // internal functions
 
-var escapeMap = map[rune]rune {
-	'"': '"',
-	'/': '/',
-	'b': '\b',
-	'f': '\f',
-	't': '\t',
-	'n': '\n',
-}
+// var escapeMap = map[rune]rune {
+// 	'"': '"',
+// 	'/': '/',
+// 	'b': '\b',
+// 	'f': '\f',
+// 	't': '\t',
+// 	'n': '\n',
+// }
 
 func stringFromEscapedBytes(input []byte) (string, error) {
-	b := bytes.Buffer{}
-	s := string(input)
+	buf := bytes.Buffer{}
+	// s := string(input)
 	escaping := false
 	skip := 0
 
-	for i, chr := range s {
+	for i, b := range input {
 		if skip > 0 {
 			skip --
 		} else if escaping {
 			escaping = false
-			switch chr {
-			case '"', '/', 'b', 'f', 't', 'n', 'r':
-				write_chr, exist := escapeMap[chr]
-				if exist {
-					b.WriteRune(write_chr)
-				}
-			case 'u':
+			switch b {
+			case byte('"'):
+				// log.Debug("\"")
+				buf.WriteRune('"')
+			case byte('/'):
+				// log.Debug("/")
+				buf.WriteRune('/')
+			case byte('b'):
+				// log.Debug("\\b")
+				buf.WriteRune('\b')
+			case byte('f'):
+				// log.Debug("\\f")
+				buf.WriteRune('\f')
+			case byte('t'):
+				// log.Debug("\\t")
+				buf.WriteRune('\t')
+			case byte('n'):
+				// log.Debug("\\n")
+				buf.WriteRune('\n')
+			case byte('r'):
+				// log.Debug("\\r")
+				buf.WriteRune('\r')
+			case byte('u'):
 				// parse unicode
-				sub_str := s[i+1:i+5]
-				unicode, err := strconv.ParseInt(sub_str, 16, 32)
+				// log.Debug("unicode start")
+				sub_bytes := input[i+1:i+5]
+				unicode, err := strconv.ParseInt(string(sub_bytes), 16, 32)
 				if err != nil {
-					// err
 					// log.Error("err: %s", err.Error())
 					return "", JsonFormatError
 				} else {
 					skip = 4
-					b.WriteRune(rune(unicode))
+					buf.WriteRune(rune(unicode))
 				}
 			default:
 				// illegal character
-				// log.Error("Illegal escaped char: %c", chr)
+				// log.Error("Illegal escaped char: 0x%2x", b)
 				return "", JsonFormatError
+				// TODO:
 			}
 		} else {
-			switch chr {
-			case '\\':
+			if b == byte('\\') {
 				// get ready to escape
 				escaping = true
-			default:
-				b.WriteRune(chr)
+			} else if 0x00 == b & 0x80 {		// 0xxxxxxx
+				// ascii
+				// log.Debug("%c 0x%02x", rune(b), b)
+				buf.WriteRune(rune(b))
+			} else if 0xC0 == b & 0xE0 {		// 110xxxxx
+				// 2 bytes utf-8
+				b0 := int(b)
+				b1 := int(input[i+1])
+				chr := (b0 & 0x1F) << 6 + (b1 & 0x3F)
+				buf.WriteRune(rune(chr))
+				// log.Debug("u%04x 0x%02x%02x", chr, input[i], input[i+1])
+				skip = 1
+			} else if 0xE0 == b & 0xF0 {		// 1110xxxx
+				// 3 bytes utf-8log.Debug("%s 0x%02x%02x", string(input[i:i+1]), input[i], input[i+1])
+				b0 := int(b)
+				b1 := int(input[i+1])
+				b2 := int(input[i+2])
+				chr := (b0 & 0x0F) << 12 + (b1 & 0x3F) << 6 + (b2 & 0x3F)
+				buf.WriteRune(rune(chr))
+				// log.Debug("u%04x 0x%02x%02x%02x", chr, input[i], input[i+1], input[i+2])
+				skip = 2
+			} else if 0xF0 == b & 0xF8 {		// 11110xxx
+				// 4 bytes utf-8
+				b0 := int(b)
+				b1 := int(input[i+1])
+				b2 := int(input[i+2])
+				b3 := int(input[i+3])
+				chr := (b0 & 0x07) << 18 + (b1 & 0x3F) << 12 + (b2 & 0x3F) << 6 + (b3 & 0x3F)
+				buf.WriteRune(rune(chr))
+				// log.Debug("u%04x 0x%02x%02x%02x%02x", chr, input[i], input[i+1], input[i+2], input[i+3])
+				skip = 3
+			} else if 0xF8 == b & 0xFC {		// 111110xx
+				// 5 bytes utf-8
+				b0 := int(b)
+				b1 := int(input[i+1])
+				b2 := int(input[i+2])
+				b3 := int(input[i+3])
+				b4 := int(input[i+4])
+				chr := (b0 & 0x03) << 24 + (b1 & 0x3F) << 18 + (b2 & 0x3F) << 12 + (b3 & 0x3F) << 6 + (b4 & 0x3F)
+				buf.WriteRune(rune(chr))
+				// log.Debug("u%04x 0x%02x%02x%02x%02x%02x", chr, input[i], input[i+1], input[i+2], input[i+3], input[i+4])
+				skip = 4
+			} else {							// 1111110x
+				// 6 bytes utf-8
+				b0 := int(b)
+				b1 := int(input[i+1])
+				b2 := int(input[i+2])
+				b3 := int(input[i+3])
+				b4 := int(input[i+4])
+				b5 := int(input[i+5])
+				chr := (b0 & 0x01) << 30 + (b1 & 0x3F) << 24 + (b2 & 0x3F) << 18 + (b3 & 0x3F) << 12 + (b4 & 0x3F) << 6 + (b5 & 0x3F)
+				buf.WriteRune(rune(chr))
+				// log.Debug("u%04x 0x%02x%02x%02x%02x%02x%02x", chr, input[i], input[i+1], input[i+2], input[i+3], input[i+4], input[i+5])
+				skip = 5
 			}
 		}
 	}
-	return b.String(), nil
+
+	ret := buf.String()
+	// log.Debug("Got string: %s", ret)
+	return ret, nil
 }
 
 // ====================
@@ -105,6 +176,7 @@ func NewByUnmarshal(s string) (*JsonValue, error) {
 func NewFromString(s string) (*JsonValue, error) {
 	var obj *JsonValue
 	var err error
+	s_byte := []byte(s)
 
 	// get first character
 	for index, chr := range s {
@@ -113,7 +185,7 @@ func NewFromString(s string) (*JsonValue, error) {
 			// continue
 		case '{':
 			obj = NewObject()
-			err = obj.parseObject([]byte(s[index:]))
+			err = obj.parseObject(s_byte[index:])
 			if err != nil {
 				return nil, err
 			} else {
@@ -121,7 +193,7 @@ func NewFromString(s string) (*JsonValue, error) {
 			}
 		case '[':
 			obj = NewArray()
-			err = obj.parseArray([]byte(s[index:]))
+			err = obj.parseArray(s_byte[index:])
 			if err != nil {
 				return nil, err
 			} else {

@@ -6,10 +6,12 @@ import (
 )
 
 func main() {
-	test.TestSqlToJson()
-	test.TestJsonValue()
-	test.TestStr()
+	// log.SetLogLevel(log.LEVEL_DEBUG)
+	// test.TestSqlToJson()
+	// test.TestJsonValue()
+	// test.TestStr()
 	for i := 0; i < 200; i ++ {
+		log.Info("TestOrigJsonEffenciency")
 		test.TestOrigJsonEffenciency()
 	}
 	log.Info("demo done")
