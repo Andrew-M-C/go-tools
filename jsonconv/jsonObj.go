@@ -78,9 +78,10 @@ func stringFromEscapedBytes(input []byte) (string, error) {
 					b.WriteRune(rune(unicode))
 				}
 			default:
-				// illegal character
-				// log.Error("Illegal escaped char: %c", chr)
-				return "", JsonFormatError
+				// the previous \ is just a simple character
+				escaping = false
+				b.WriteRune('\\')
+				b.WriteRune(chr)
 			}
 		} else {
 			switch chr {
@@ -91,6 +92,10 @@ func stringFromEscapedBytes(input []byte) (string, error) {
 				b.WriteRune(chr)
 			}
 		}
+	}
+	if escaping {
+		escaping = false
+		b.WriteRune('\\')
 	}
 	return b.String(), nil
 }
