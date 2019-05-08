@@ -78,9 +78,10 @@ func stringFromEscapedBytes(input []byte) (string, error) {
 					b.WriteRune(rune(unicode))
 				}
 			default:
-				// illegal character
-				// log.Error("Illegal escaped char: %c", chr)
-				return "", JsonFormatError
+				// the previous \ is just a simple character
+				escaping = false
+				b.WriteRune('\\')
+				b.WriteRune(chr)
 			}
 		} else {
 			switch chr {
@@ -91,6 +92,10 @@ func stringFromEscapedBytes(input []byte) (string, error) {
 				b.WriteRune(chr)
 			}
 		}
+	}
+	if escaping {
+		escaping = false
+		b.WriteRune('\\')
 	}
 	return b.String(), nil
 }
@@ -542,6 +547,16 @@ func (obj *JsonValue) GetInt(first interface{}, keys ...interface{}) (int64, err
 	return child.Int(), nil
 }
 
+func (obj *JsonValue) GetInt32(first interface{}, keys ...interface{}) (int32, error) {
+	ret, err := obj.GetInt(first, keys...)
+	return int32(ret), err
+}
+
+func (obj *JsonValue) GetInteger(first interface{}, keys ...interface{}) (int, error) {
+	ret, err := obj.GetInt(first, keys...)
+	return int(ret), err
+}
+
 func (obj *JsonValue) GetFloat(first interface{}, keys ...interface{}) (float64, error) {
 	child, err := obj.Get(first, keys...)
 	if err != nil {
@@ -825,6 +840,14 @@ func (this *JsonValue) SetNull(first interface{}, keys ...interface{}) error {
 
 func (this *JsonValue) SetInt(i int64, first interface{}, keys ...interface{}) error {
 	return this.Set(NewInt(i), first, keys...)
+}
+
+func (this *JsonValue) SetInt32(i int32, first interface{}, keys ...interface{}) error {
+	return this.Set(NewInt(int64(i)), first, keys...)
+}
+
+func (this *JsonValue) SetInteger(i int, first interface{}, keys ...interface{}) error {
+	return this.Set(NewInt(int64(i)), first, keys...)
 }
 
 func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{}) error {
