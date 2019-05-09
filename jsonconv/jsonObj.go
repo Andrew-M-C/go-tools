@@ -10,7 +10,7 @@ import (
 )
 
 // data definitions same as jsonparser
-type ValueType int
+type ValueType jsonparser.ValueType
 const (
 	NotExist = jsonparser.NotExist
 	String	= jsonparser.String
