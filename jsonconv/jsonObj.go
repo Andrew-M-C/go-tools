@@ -10,21 +10,21 @@ import (
 )
 
 // data definitions same as jsonparser
-type ValueType jsonparser.ValueType
+type ValueType int
 const (
-	NotExist = jsonparser.NotExist
-	String	= jsonparser.String
-	Number	= jsonparser.Number
-	Object	= jsonparser.Object
-	Array	= jsonparser.Array
-	Boolean	= jsonparser.Boolean
-	Null	= jsonparser.Null
-	Unknown	= jsonparser.Unknown
+	NotExist 	ValueType = ValueType(jsonparser.NotExist)
+	String 		ValueType = ValueType(jsonparser.String)
+	Number 		ValueType = ValueType(jsonparser.Number)
+	Object 		ValueType = ValueType(jsonparser.Object)
+	Array 		ValueType = ValueType(jsonparser.Array)
+	Boolean 	ValueType = ValueType(jsonparser.Boolean)
+	Null 		ValueType = ValueType(jsonparser.Null)
+	Unknown 	ValueType = ValueType(jsonparser.Unknown)
 )
 
 type JsonValue struct {
 	// type
-	valueType		jsonparser.ValueType
+	valueType		ValueType
 	// values
 	stringValue		string
 	intValue		int64
