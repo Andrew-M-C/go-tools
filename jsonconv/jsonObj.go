@@ -30,10 +30,15 @@ type JsonValue struct {
 	intValue		int64
 	floatValue		float64
 	boolValue		bool
+	uintValue		uint64
 	// object children
 	objChildren		map[string]*JsonValue
 	// array children
 	arrChildren		[]*JsonValue
+	// number type judgement
+	mustSigned		bool
+	mustUnsigned	bool
+	mustFloat		bool
 }
 
 // ====================
@@ -132,17 +137,46 @@ func NewFromString(s string) (*JsonValue, error) {
 			} else {
 				return obj, nil
 			}
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
 			obj = new(JsonValue)
 			obj.valueType = Number
-			obj.intValue, err = strconv.ParseInt(s[index:], 10, 64)
-			if err != nil {
-				return nil, err
-			}
+			obj.mustSigned = (chr == '-')
 			obj.floatValue, err = strconv.ParseFloat(s[index:], 64)
 			if err != nil {
 				return nil, err
 			}
+			obj.intValue, err = strconv.ParseInt(s[index:], 10, 64)
+			if err != nil {
+				// return nil, err
+				// if parseFloat OK but parseInt failed, this may be a float
+				// log.Debug("error: %s", err.Error())
+				if strings.HasSuffix(err.Error(), "value out of range") {
+					// this must be a unsigned integer
+					obj.mustUnsigned = true
+				} else {
+					// log.Debug("MARK")
+					obj.mustFloat = true
+					obj.intValue = int64(obj.floatValue)
+					obj.uintValue = uint64(obj.intValue)
+				}
+			}
+			// log.Debug("mustUnsigned = %t, mustFloat = %t", obj.mustUnsigned, obj.mustFloat)
+
+			if obj.mustUnsigned && false == obj.mustFloat {
+				obj.uintValue, err = strconv.ParseUint(s[index:], 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				if 0 != obj.uintValue & 0x1000000000000000 {
+					obj.mustUnsigned = true
+				}
+			} else {
+				obj.uintValue = uint64(obj.intValue)
+			}
+			// log.Debug("orig str: %s", s[index:])
+			// log.Debug("parsed i: %d", obj.intValue)
+			// log.Debug("parsed u: %s", strconv.FormatUint(obj.uintValue, 10))
+			// log.Debug("parsed x: 0x%x", obj.uintValue)
 			return obj, nil
 		case '"':
 			obj = new(JsonValue)
@@ -173,6 +207,14 @@ func NewFromString(s string) (*JsonValue, error) {
 			} else {
 				return nil, JsonFormatError
 			}
+		case 'n':
+			if s[index:] == "null" {
+				obj = new(JsonValue)
+				obj.valueType = Null
+				return obj, nil
+			} else {
+				return nil, JsonFormatError
+			}
 		default:
 			// log.Debug("Skip: %c", chr)
 			// skip
@@ -193,6 +235,24 @@ func NewInt(i int64) *JsonValue {
 	obj.valueType = Number
 	obj.intValue = i
 	obj.floatValue = float64(i)
+	obj.uintValue = uint64(i)
+	if i < 0 {
+		obj.mustSigned = true
+	} else {
+		obj.mustUnsigned = true
+	}
+	return obj
+}
+
+func NewUint(i uint64) *JsonValue {
+	obj := new(JsonValue)
+	obj.valueType = Number
+	obj.intValue = int64(i)
+	obj.floatValue = float64(i)
+	obj.uintValue = i
+	if 0 != i & 0x1000000000000000 {
+		obj.mustUnsigned = true
+	}
 	return obj
 }
 
@@ -201,6 +261,8 @@ func NewFloat(f float64) *JsonValue {
 	obj.valueType = Number
 	obj.intValue = int64(f)
 	obj.floatValue = f
+	obj.mustFloat = true
+	obj.mustSigned = true
 	return obj
 }
 
@@ -365,6 +427,13 @@ func (obj *JsonValue) String() string {
 func (obj *JsonValue) Int() int64 {
 	if obj.valueType == Number {
 		return obj.intValue
+	}
+	return 0
+}
+
+func (obj *JsonValue) Uint() uint64 {
+	if obj.valueType == Number {
+		return obj.uintValue
 	}
 	return 0
 }
@@ -600,9 +669,13 @@ func (obj *JsonValue)Marshal(opts... Option) (string, error) {
 	case String:
 		return `"` + escapeJsonString(obj.String(), opt.EnsureAscii) + `"`, nil
 	case Number:
-		i := obj.Int()
-		f := obj.Float()
-		if float64(i) == f {
+		i := obj.intValue
+		f := obj.floatValue
+		if obj.mustFloat {
+			return convertFloatToString(f, opt.FloatDigits), nil
+		} else if obj.mustUnsigned {
+			return strconv.FormatUint(obj.uintValue, 10), nil
+		} else if float64(i) == f {
 			return strconv.FormatInt(i, 10), nil
 		} else {
 			return convertFloatToString(f, opt.FloatDigits), nil

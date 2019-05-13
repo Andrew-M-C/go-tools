@@ -3,6 +3,7 @@ package _test
 import (
 	"github.com/Andrew-M-C/go-tools/jsonconv"
 	"github.com/Andrew-M-C/go-tools/log"
+	"strconv"
 )
 
 var strStandard = `{
@@ -100,6 +101,86 @@ func TestJsonValue() {
 	}
 	json_str, _ = obj.Marshal()
 	log.Info("new json after modification: %s", json_str)
+
+	// test simple json string
+	{
+		a_str_value, err := jsonconv.NewFromString(`"hello"`)
+		if err != nil {
+			log.Error("unmarshal string failed: %s", err.Error())
+			return
+		}
+		if a_str_value.Type() != jsonconv.String {
+			log.Error("json type error: %s", a_str_value.TypeString())
+			return
+		}
+		raw_string, _ := a_str_value.Marshal()
+		log.Info("test basic string OK, value: %s", raw_string)
+	}
+
+	// test simple json bool
+	{
+		a_bool_value, err := jsonconv.NewFromString("true")
+		if err != nil {
+			log.Error("unmarshal string failed: %s", err.Error())
+			return
+		}
+		if a_bool_value.Type() != jsonconv.Boolean {
+			log.Error("json type error: %s", a_bool_value.TypeString())
+			return
+		}
+		raw_string, _ := a_bool_value.Marshal()
+		log.Info("test basic string OK, value: %s", raw_string)
+	}
+
+	// test simple null
+	{
+		a_null_value, err := jsonconv.NewFromString("null")
+		if err != nil {
+			log.Error("unmarshal string failed: %s", err.Error())
+			return
+		}
+		if a_null_value.Type() != jsonconv.Null {
+			log.Error("json type error: %s", a_null_value.TypeString())
+			return
+		}
+		raw_string, _ := a_null_value.Marshal()
+		log.Info("test basic string OK, value: %s", raw_string)
+	}
+
+	// test simple number
+	{
+		an_int_value, err := jsonconv.NewFromString("-1000.0001")
+		if err != nil {
+			log.Error("unmarshal string failed: %s", err.Error())
+			return
+		}
+		if an_int_value.Type() != jsonconv.Number {
+			log.Error("json type error: %s", an_int_value.TypeString())
+			return
+		}
+		raw_string, _ := an_int_value.Marshal()
+		log.Info("test basic string OK, value: %s", raw_string)
+	}
+
+	// test uint64
+	{
+		uint_val := uint64(0xFFFFFFFFFFFFFFFF)
+		a_uint_value, err := jsonconv.NewFromString(strconv.FormatUint(uint_val, 10))
+		if err != nil {
+			log.Error("unmarshal string failed: %s", err.Error())
+			return
+		}
+		if a_uint_value.Type() != jsonconv.Number {
+			log.Error("json type error: %s", a_uint_value.TypeString())
+			return
+		}
+		raw_string, _ := a_uint_value.Marshal()
+		if raw_string == strconv.FormatUint(uint_val, 10) {
+			log.Info("test basic string OK, value: %s", raw_string)
+		} else {
+			log.Error("could not recognize large uint64")
+		}
+	}
 
 	// return
 	return
