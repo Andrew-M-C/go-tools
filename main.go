@@ -14,7 +14,8 @@ func main() {
 	// 	log.Info("TestOrigJsonEffenciency")
 	// 	test.TestOrigJsonEffenciency()
 	// }
-	test.TestAwsomeEscapingJson()
+	// test.TestAwsomeEscapingJson()
+	test.TestJsonMerge()
 	log.Info("demo done")
 	return
 }

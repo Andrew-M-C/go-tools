@@ -33,12 +33,17 @@ const (
 )
 
 type Option struct {
+	// for JsonValue
 	ShowNull		bool
 	EnsureAscii		bool
 	FloatDigits		uint8
+	// for sql2json
 	TimeDigits		uint8
 	FilterMode		Filter
 	FilterList		[]string
+	// for JsonValue.MergeFrom()
+	OverrideArray	bool
+	OverrideObject	bool
 }
 
 var dftOption = Option {
@@ -47,6 +52,8 @@ var dftOption = Option {
 	FloatDigits: 0,
 	TimeDigits: 0,
 	FilterMode: Normal,
+	OverrideArray: false,
+	OverrideObject: false,
 }
 
 func escapeJsonString(s string, ensureAscii bool) string {

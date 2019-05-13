@@ -119,3 +119,56 @@ func TestAwsomeEscapingJson() {
 	log.Info("reparsed:\n%s", res_str)
 	return
 }
+
+
+func TestJsonMerge() {
+	var str_to, str_fr string
+
+	test_func := func(str_to, str_from string) {
+		json_to, _ := jsonconv.NewFromString(str_to)
+		json_fr, _ := jsonconv.NewFromString(str_fr)
+
+		json_to.MergeFrom(json_fr)
+		json_out, _ := json_to.Marshal()
+		log.Info("Orig: %s", str_to)
+		log.Info("Merg: %s", str_fr)
+		log.Info("ResA: %s", json_out)
+
+		json_to, _ = jsonconv.NewFromString(str_to)
+		json_to.MergeFrom(json_fr, jsonconv.Option{OverrideArray: true})
+		json_out, _ = json_to.Marshal()
+		log.Info("ResB: %s", json_out)
+
+		json_to, _ = jsonconv.NewFromString(str_to)
+		json_to.MergeFrom(json_fr, jsonconv.Option{OverrideObject: true})
+		json_out, _ = json_to.Marshal()
+		log.Info("ResC: %s", json_out)
+
+		return
+	}
+
+	str_to = `{"string":"strTo","int":0,"obj":{"obj_str":"obj_string","obj_array":[true,"1",2]}}`
+	str_fr = `{"string":"strFr","int":1,"obj":{"obj_str":"obj_str_new","obj_array":[false,"10",20],"obj_int":1234}}`
+	test_func(str_to, str_fr)
+
+	str_to = `{"string": "orig"}`
+	str_fr = `{"string": [1, 2, 3, 4]}`
+	test_func(str_to, str_fr)
+
+	str_to = `{"arr": [1, 2 ,3 ,4]}`
+	str_fr = `{"arr": ["5", "6", "7", "8"]}`
+	test_func(str_to, str_fr)
+
+	str_to = `{"different_type": null}`
+	str_fr = `{"different_type": 123.45}`
+	test_func(str_to, str_fr)
+
+	str_to = `{"type_1": 123.45, "type_2": "hello"}`
+	str_fr = `{"type_1": {"new":"obj"}, "type_2": null}`
+	test_func(str_to, str_fr)
+
+	str_to = `{"obj": {"k1": 1, "k2": "2", "k3": true}}`
+	str_fr = `{"obj": {"k2": 2, "k3": false, "k4":4.44, "k5": 5.00}}`
+	test_func(str_to, str_fr)
+	return
+}
