@@ -859,7 +859,7 @@ func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...inte
 	}
 }
 
-func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	// log.Debug("Set \"%v\" (%v)", first, keys)
 	keys_count := len(keys)
 	switch keys_count {
@@ -869,61 +869,65 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 			if this.IsObject() {
 				key := first.(string)
 				this.objChildren[key] = newOne
-				return nil
+				return newOne, nil
 			} else {
 				// log.Error("Not an object")
-				return NotAnObjectError
+				return nil, NotAnObjectError
 			}
 		default:
 			// log.Error("leaf not a string")
-			return DataTypeError
+			return nil, DataTypeError
 		}
 	case 1:
 		child, err := this.Get(first)
 		if err != nil {
 			// log.Error("Failed to get: %s", err.Error())
-			return err
+			return nil, err
 		}
 		return child.Set(newOne, keys[0])
 	default:
 		child, err := this.Get(first)
 		if err != nil {
 			// log.Error("Failed to get: %s", err.Error())
-			return err
+			return nil, err
 		}
 		return child.Set(newOne, keys[0], keys[1:]...)
 	}
 }
 
-func (this *JsonValue) SetString(s string, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetString(s string, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewString(s), first, keys...)
 }
 
-func (this *JsonValue) SetBoolean(b bool, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetBoolean(b bool, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewBool(b), first, keys...)
 }
 
-func (this *JsonValue) SetBool(b bool, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetBool(b bool, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewBool(b), first, keys...)
 }
 
-func (this *JsonValue) SetNull(first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetNull(first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewNull(), first, keys...)
 }
 
-func (this *JsonValue) SetInt(i int64, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetInt(i int64, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewInt(i), first, keys...)
 }
 
-func (this *JsonValue) SetInt32(i int32, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetUint(i uint64, first interface{}, keys ...interface{}) (*JsonValue, error) {
+	return this.Set(NewUint(i), first, keys...)
+}
+
+func (this *JsonValue) SetInt32(i int32, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewInt(int64(i)), first, keys...)
 }
 
-func (this *JsonValue) SetInteger(i int, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetInteger(i int, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewInt(int64(i)), first, keys...)
 }
 
-func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{}) error {
+func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{}) (*JsonValue, error) {
 	return this.Set(NewFloat(f), first, keys...)
 }
 

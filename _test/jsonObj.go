@@ -91,11 +91,11 @@ func TestJsonValue() {
 	}
 
 	// test modification
-	err = obj.Set(jsonconv.NewString("THIS IS A FULL NEW STRING"), "an-array", 0, "sub-string")
+	_, err = obj.Set(jsonconv.NewString("THIS IS A FULL NEW STRING"), "an-array", 0, "sub-string")
 	if err != nil {
 		log.Error("Failed to set: %s", err.Error())
 	}
-	err = obj.Set(jsonconv.NewString("THIS IS ANOTHER FULL NEW STRING"), "an-array", 0, "sub-sub-array", 0, "sub-sub-string")
+	_, err = obj.Set(jsonconv.NewString("THIS IS ANOTHER FULL NEW STRING"), "an-array", 0, "sub-sub-array", 0, "sub-sub-string")
 	if err != nil {
 		log.Error("Failed to set: %s", err.Error())
 	}
