@@ -19,7 +19,7 @@ var strStandard = `{
 			"another-sub-string": "\"string\" in an object in an object",
 			"another-sub-array": [1, "string in sub
 array", true, null],
-			"complex":"\u4e2d\t\u6587"
+			"complex":"\u4e2d\t\u6587<<&&&>>"
 		}
 	},
 	"an-array": [
@@ -27,7 +27,7 @@ array", true, null],
 			"sub-string": "string in an object in an array",
 			"sub-sub-array": [
 				{
-					"sub-sub-string": "string in an object in an array in an object in an string"
+					"sub-sub-string": "string in an object in an array in an object in an <string>"
 				}
 			]
 		},
