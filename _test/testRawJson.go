@@ -7,11 +7,6 @@ import (
 	"strings"
 	"strconv"
 	"time"
-	"os"
-)
-
-var (
-	_file	*os.File
 )
 
 type teststruct struct {
@@ -22,27 +17,18 @@ type teststruct struct {
 	O	map[string]interface{}	`json:"obj"`
 }
 
-func elapsed(s time.Time) string {
+func elapsed(s time.Time) int64 {
 	e := time.Now().Sub(s)
 	usec := e.Nanoseconds()
-	ret := strconv.Itoa(int(usec))
-	_file.WriteString(ret + "\t")
-	return ret + " nanoseconds"
+	return usec
 }
 
-func TestOrigJsonEffenciency() {
+func TestOrigJsonEffenciency() (mapIntf, mapIntfAll, structure, parser, conv int64) {
 	// This is an example for how to parse a structure-unknown JSON string
 	// refs:
 	//  - [preserve int64 values when parsing json in Go](https://stackoverflow.com/questions/16946306/preserve-int64-values-when-parsing-json-in-go)
 	//  - [buger/jsonparser](https://github.com/buger/jsonparser)
 	var err error
-	_file, err = os.OpenFile("./test.txt", os.O_APPEND | os.O_WRONLY | os.O_CREATE, 0644)
-	if err != nil {
-		log.Error("Failed to open file: %s", err.Error())
-	} else {
-		defer _file.Close()
-		defer _file.WriteString("\n")
-	}
 
 	var start time.Time
 	json_bytes := []byte("{\"str\": \"hello, json\", \"int\": 123, \"float\": 10.2, \"array\": [1, \"2\"], \"obj\": {\"num\": 10}, \"bool\": true, \"int64\": 4418489049307132905}")
@@ -114,7 +100,8 @@ func TestOrigJsonEffenciency() {
 	if err != nil {
 		log.Error("unmarshal json error: " + err.Error())
 	}
-	log.Info("End of encoding/json without map parsing: %s", elapsed(start))
+	mapIntf = elapsed(start)
+	log.Info("End of encoding/json without map parsing: %v", mapIntf)
 
 	log.Info("Now try encoding/json with map parsing")
 	start = time.Now()
@@ -124,7 +111,8 @@ func TestOrigJsonEffenciency() {
 	} else {
 		func_parse_obj(data, 0)
 	}
-	log.Info("End of encoding/json with map parsing: %s", elapsed(start))
+	mapIntfAll = elapsed(start)
+	log.Info("End of encoding/json with map parsing: %v", mapIntfAll)
 
 	log.Info("Now try encoding/json struct")
 	aStruct := teststruct{}
@@ -133,7 +121,8 @@ func TestOrigJsonEffenciency() {
 	if err != nil {
 		log.Error("unmarshal json error: " + err.Error())
 	}
-	log.Info("End of encoding/json struct: %s", elapsed(start))
+	structure = elapsed(start)
+	log.Info("End of encoding/json struct: %v", structure)
 
 	var func_obj_each func([]byte, []byte, jsonparser.ValueType, int) error
 	var func_array_each func([]byte, jsonparser.ValueType, int, error)
@@ -207,10 +196,14 @@ func TestOrigJsonEffenciency() {
 	start = time.Now()
 	jsonparser.ObjectEach(json_bytes, func_obj_each)
 	prefix_level = 0
-	log.Info("End of jsonparser: %s", elapsed(start))
+	parser = elapsed(start)
+	log.Info("End of jsonparser: %v", parser)
 
 	log.Info("Now try jsonconv")
 	start = time.Now()
 	_, _ = jsonconv.NewFromString(string(json_bytes))
-	log.Info("End of jsonconv: %s", elapsed(start))
+	conv = elapsed(start)
+	log.Info("End of jsonconv: %v", conv)
+
+	return
 }

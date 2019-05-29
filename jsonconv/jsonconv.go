@@ -27,9 +27,9 @@ var (
 
 type Filter int
 const (
-	Normal		Filter = 0
-	IncludeMode	Filter = 1
-	ExcludeMode	Filter = 2
+	Normal		Filter = iota
+	IncludeMode
+	ExcludeMode
 )
 
 type Option struct {
