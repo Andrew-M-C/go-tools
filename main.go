@@ -7,15 +7,16 @@ import (
 
 func main() {
 	log.SetLogLevel(log.LEVEL_DEBUG)
-	// test.TestSqlToJson()
+	test.TestSqlToJson()
 	test.TestJsonValue()
-	// test.TestStr()
+	test.TestJsonObjSort()
+	test.TestStr()
 	// for i := 0; i < 200; i ++ {
 	// 	log.Info("TestOrigJsonEffenciency")
 	// 	test.TestOrigJsonEffenciency()
 	// }
-	// test.TestAwsomeEscapingJson()
-	// test.TestJsonMerge()
+	test.TestAwsomeEscapingJson()
+	test.TestJsonMerge()
 	log.Info("demo done")
 	return
 }

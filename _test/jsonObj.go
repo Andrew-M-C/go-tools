@@ -4,6 +4,9 @@ import (
 	"github.com/Andrew-M-C/go-tools/jsonconv"
 	"github.com/Andrew-M-C/go-tools/log"
 	"strconv"
+	"math/rand"
+	"unsafe"
+	"sort"
 )
 
 var strStandard = `{
@@ -251,5 +254,71 @@ func TestJsonMerge() {
 	str_to = `{"obj": {"k1": 1, "k2": "2", "k3": true}}`
 	str_fr = `{"obj": {"k2": 2, "k3": false, "k4":4.44, "k5": 5.00}}`
 	test_func(str_to, str_fr)
+	return
+}
+
+
+func TestJsonObjSort() {
+	// randomize several numbers
+	COUNT := 10
+	json_list := jsonconv.NewArray()
+	for i := 0; i < COUNT; i++ {
+		json_list.Append(jsonconv.NewInt64(rand.Int63n(100)))
+	}
+
+	s := ""
+	s, _ = json_list.Marshal()
+	log.Info("orig:  %s", s)
+
+	// sort
+	sort.Sort((*_ByValue)(unsafe.Pointer(json_list)))
+
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	// delete
+	json_list.Delete(5)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	json_list.Delete(0)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	json_list.Delete(7)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	// insert
+	json_list.Insert(jsonconv.NewInt(100), 6)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	json_list.Insert(jsonconv.NewInt(200), 6)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	// set
+	json_list.SetInt(300, 0)
+	s, _ = json_list.Marshal()
+	log.Info("after: %s", s)
+
+	return
+}
+
+type _ByValue jsonconv.JsonValue
+func (this *_ByValue) Len() int {
+	v := (*jsonconv.JsonValue)(unsafe.Pointer(this))
+	return v.Length()
+}
+func (this *_ByValue) Less(i, j int) bool {
+	v := (*jsonconv.JsonValue)(unsafe.Pointer(this))
+	left, _ := v.GetInt(i)
+	right, _ := v.GetInt(j)
+	return left < right
+}
+func (this *_ByValue) Swap(i, j int) {
+	v := (*jsonconv.JsonValue)(unsafe.Pointer(this))
+	v.Swap(i, j)
 	return
 }

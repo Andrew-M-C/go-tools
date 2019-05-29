@@ -223,83 +223,6 @@ func NewFromString(s string) (*JsonValue, error) {
 	return nil, JsonFormatError
 }
 
-func NewString(s string) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = String
-	obj.stringValue = s
-	return obj
-}
-
-func NewInt(i int64) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Number
-	obj.intValue = i
-	obj.floatValue = float64(i)
-	obj.uintValue = uint64(i)
-	if i < 0 {
-		obj.mustSigned = true
-	} else {
-		obj.mustUnsigned = true
-	}
-	return obj
-}
-
-func NewUint(i uint64) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Number
-	obj.intValue = int64(i)
-	obj.floatValue = float64(i)
-	obj.uintValue = i
-	if 0 != i & 0x1000000000000000 {
-		obj.mustUnsigned = true
-	}
-	return obj
-}
-
-func NewFloat(f float64) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Number
-	obj.intValue = int64(f)
-	obj.floatValue = f
-	obj.mustFloat = true
-	obj.mustSigned = true
-	return obj
-}
-
-func NewBool(b bool) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Boolean
-	obj.boolValue = b
-	return obj
-}
-
-func NewBoolean(b bool) *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Boolean
-	obj.boolValue = b
-	return obj
-}
-
-func NewNull() *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Null
-	return obj
-}
-
-func NewObject() *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Object
-	obj.objChildren = make(map[string]*JsonValue)
-	return obj
-}
-
-func NewArray() *JsonValue {
-	obj := new(JsonValue)
-	obj.valueType = Array
-	obj.arrChildren = make([]*JsonValue, 0, 10)
-	return obj
-}
-
 // ====================
 // parse functions
 
@@ -786,7 +709,9 @@ func (obj *JsonValue) Delete(first interface{}, keys ...interface{}) error {
 		index := int(value.Int())
 		arr_len := len(parent.arrChildren)
 		if index >= 0 && index < arr_len {
-			parent.arrChildren = append(parent.arrChildren[index:], parent.arrChildren[index+1:]...)
+			tail := parent.arrChildren[index+1:]
+			parent.arrChildren = parent.arrChildren[0:index]
+			parent.arrChildren = append(parent.arrChildren, tail...)
 			return nil
 		} else {
 			return IndexOutOfBoundsError
@@ -797,35 +722,35 @@ func (obj *JsonValue) Delete(first interface{}, keys ...interface{}) error {
 	}
 }
 
-func (this *JsonValue) Append(newOne *JsonValue, keys ...interface{}) error {
+func (this *JsonValue) Append(newOne *JsonValue, keys ...interface{}) (*JsonValue, error) {
 	if nil == newOne {
-		return nil
+		return nil, ParaError
 	}
 	if 0 == len(keys) {
 		if this.valueType == Array {
 			this.arrChildren = append(this.arrChildren, newOne)
-			return nil
+			return newOne, nil
 		} else {
-			return NotAnArrayError
+			return nil, NotAnArrayError
 		}
 	} else {
 		child, err := this.Get(keys[0], keys[1:]...)
 		if err != nil {
-			return err
+			return nil, err
 		} else {
 			return child.Append(newOne)
 		}
 	}
 }
 
-func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...interface{}) error {
+func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...interface{}) (*JsonValue, error) {
 	if nil == newOne {
-		return nil
+		return nil, ParaError
 	}
 	keys_count := len(keys)
 	if 0 == keys_count {
 		if this.valueType != Array {
-			return NotAnArrayError
+			return nil, NotAnArrayError
 		}
 		switch index.(type) {
 		case uint8, int8, uint16, int16, uint32, int32, uint64, int64, int, uint:
@@ -833,15 +758,15 @@ func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...inte
 			index := int(value.Int())
 			arr_len := len(this.arrChildren)
 			if index >= 0 && index < arr_len {
-				rear := this.arrChildren[index:]
-				this.arrChildren = append(this.arrChildren[0:index], newOne)
-				this.arrChildren = append(this.arrChildren, rear...)
-				return nil
+				// ref: [SliceTricks](https://github.com/golang/go/wiki/SliceTricks)
+				a := this.arrChildren
+				this.arrChildren = append(a[:index], append([]*JsonValue{newOne}, a[index:]...)...)
+				return newOne, nil
 			} else {
-				return IndexOutOfBoundsError
+				return nil, IndexOutOfBoundsError
 			}
 		default:
-			return DataTypeError
+			return nil, DataTypeError
 
 		}
 	} else {
@@ -853,10 +778,24 @@ func (this *JsonValue) Insert(newOne *JsonValue, index interface{}, keys ...inte
 			child, err = this.Get(index, keys[:keys_count-2]...)
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 		return child.Insert(newOne, keys[keys_count-1])
 	}
+}
+
+func (this *JsonValue) Swap(i, j int) error {
+	if false == this.IsArray() {
+		return NotAnArrayError
+	}
+
+	l := this.Length()
+	if i >= l || j >= l {
+		return IndexOutOfBoundsError
+	}
+
+	this.arrChildren[i], this.arrChildren[j] = this.arrChildren[j], this.arrChildren[i]
+	return nil
 }
 
 func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interface{}) (*JsonValue, error) {
@@ -873,6 +812,16 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 			} else {
 				// log.Error("Not an object")
 				return nil, NotAnObjectError
+			}
+		case uint8, int8, uint16, int16, uint32, int32, uint64, int64, int, uint:
+			if this.IsArray() {
+				value := reflect.ValueOf(first)
+				index := int(value.Int())
+				this.arrChildren[index] = newOne
+				return newOne, nil
+			} else {
+				// log.Error("Not an array")
+				return nil, NotAnArrayError
 			}
 		default:
 			// log.Error("leaf not a string")
@@ -893,42 +842,6 @@ func (this *JsonValue) Set(newOne *JsonValue, first interface{}, keys ...interfa
 		}
 		return child.Set(newOne, keys[0], keys[1:]...)
 	}
-}
-
-func (this *JsonValue) SetString(s string, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewString(s), first, keys...)
-}
-
-func (this *JsonValue) SetBoolean(b bool, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewBool(b), first, keys...)
-}
-
-func (this *JsonValue) SetBool(b bool, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewBool(b), first, keys...)
-}
-
-func (this *JsonValue) SetNull(first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewNull(), first, keys...)
-}
-
-func (this *JsonValue) SetInt(i int64, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewInt(i), first, keys...)
-}
-
-func (this *JsonValue) SetUint(i uint64, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewUint(i), first, keys...)
-}
-
-func (this *JsonValue) SetInt32(i int32, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewInt(int64(i)), first, keys...)
-}
-
-func (this *JsonValue) SetInteger(i int, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewInt(int64(i)), first, keys...)
-}
-
-func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{}) (*JsonValue, error) {
-	return this.Set(NewFloat(f), first, keys...)
 }
 
 // ====================
