@@ -347,16 +347,44 @@ func (obj *JsonValue) String() string {
 	return ""
 }
 
-func (obj *JsonValue) Int() int64 {
+func (obj *JsonValue) Int64() int64 {
 	if obj.valueType == Number {
 		return obj.intValue
 	}
 	return 0
 }
 
-func (obj *JsonValue) Uint() uint64 {
+func (obj *JsonValue) Uint64() uint64 {
 	if obj.valueType == Number {
 		return obj.uintValue
+	}
+	return 0
+}
+
+func (obj *JsonValue) Int32() int32 {
+	if obj.valueType == Number {
+		return int32(obj.intValue)
+	}
+	return 0
+}
+
+func (obj *JsonValue) Uint32() uint32 {
+	if obj.valueType == Number {
+		return uint32(obj.uintValue)
+	}
+	return 0
+}
+
+func (obj *JsonValue) Int() int {
+	if obj.valueType == Number {
+		return int(obj.intValue)
+	}
+	return 0
+}
+
+func (obj *JsonValue) Uint() uint {
+	if obj.valueType == Number {
+		return uint(obj.uintValue)
 	}
 	return 0
 }
@@ -526,49 +554,6 @@ func (obj *JsonValue) GetString(first interface{}, keys ...interface{}) (string,
 		return "", NotAStringError
 	}
 	return child.String(), nil
-}
-
-func (obj *JsonValue) GetInt(first interface{}, keys ...interface{}) (int64, error) {
-	child, err := obj.Get(first, keys...)
-	if err != nil {
-		return 0, err
-	}
-	if false == child.IsNumber() {
-		return 0, NotANumberError
-	}
-	return child.Int(), nil
-}
-
-func (obj *JsonValue) GetInt32(first interface{}, keys ...interface{}) (int32, error) {
-	ret, err := obj.GetInt(first, keys...)
-	return int32(ret), err
-}
-
-func (obj *JsonValue) GetInteger(first interface{}, keys ...interface{}) (int, error) {
-	ret, err := obj.GetInt(first, keys...)
-	return int(ret), err
-}
-
-func (obj *JsonValue) GetFloat(first interface{}, keys ...interface{}) (float64, error) {
-	child, err := obj.Get(first, keys...)
-	if err != nil {
-		return 0.0, err
-	}
-	if false == child.IsNumber() {
-		return 0.0, NotANumberError
-	}
-	return child.Float(), nil
-}
-
-func (obj *JsonValue) GetBool(first interface{}, keys ...interface{}) (bool, error) {
-	child, err := obj.Get(first, keys...)
-	if err != nil {
-		return false, err
-	}
-	if false == child.IsBool() {
-		return false, NotABoolError
-	}
-	return child.Bool(), nil
 }
 
 // ====================

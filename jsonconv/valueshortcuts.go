@@ -140,6 +140,83 @@ func (this *JsonValue) InsertFloat(f float64, first interface{}, keys ...interfa
 }
 
 
+// ==== GetXxx ====
+func (obj *JsonValue) GetInt64(first interface{}, keys ...interface{}) (int64, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return 0, err
+	}
+	if false == child.IsNumber() {
+		return 0, NotANumberError
+	}
+	return child.Int64(), nil
+}
+
+func (obj *JsonValue) GetUint64(first interface{}, keys ...interface{}) (uint64, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return 0, err
+	}
+	if false == child.IsNumber() {
+		return 0, NotANumberError
+	}
+	return child.Uint64(), nil
+}
+
+func (obj *JsonValue) GetInt32(first interface{}, keys ...interface{}) (int32, error) {
+	ret, err := obj.GetInt64(first, keys...)
+	return int32(ret), err
+}
+
+func (obj *JsonValue) GetUint32(first interface{}, keys ...interface{}) (uint32, error) {
+	ret, err := obj.GetUint64(first, keys...)
+	return uint32(ret), err
+}
+
+func (obj *JsonValue) GetInt(first interface{}, keys ...interface{}) (int, error) {
+	ret, err := obj.GetInt64(first, keys...)
+	return int(ret), err
+}
+
+func (obj *JsonValue) GetUint(first interface{}, keys ...interface{}) (uint, error) {
+	ret, err := obj.GetUint(first, keys...)
+	return uint(ret), err
+}
+
+func (obj *JsonValue) GetFloat(first interface{}, keys ...interface{}) (float64, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return 0.0, err
+	}
+	if false == child.IsNumber() {
+		return 0.0, NotANumberError
+	}
+	return child.Float(), nil
+}
+
+func (obj *JsonValue) GetBool(first interface{}, keys ...interface{}) (bool, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return false, err
+	}
+	if false == child.IsBool() {
+		return false, NotABoolError
+	}
+	return child.Bool(), nil
+}
+
+func (obj *JsonValue) GetBoolean(first interface{}, keys ...interface{}) (bool, error) {
+	child, err := obj.Get(first, keys...)
+	if err != nil {
+		return false, err
+	}
+	if false == child.IsBool() {
+		return false, NotABoolError
+	}
+	return child.Bool(), nil
+}
+
+
 // ==== NewXxx ====
 func NewString(s string) *JsonValue {
 	obj := new(JsonValue)
