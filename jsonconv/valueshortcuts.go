@@ -310,3 +310,40 @@ func NewArray() *JsonValue {
 	obj.arrChildren = make([]*JsonValue, 0, 0)
 	return obj
 }
+
+// IsXxx for number type
+func (this *JsonValue) IsFloat() bool {
+	if this.IsNumber() {
+		return this.mustFloat
+	} else {
+		return false
+	}
+}
+
+func (this *JsonValue) IsUnsigned() bool {
+	if this.IsNumber() {
+		if this.mustFloat {
+			return false
+		} else if this.mustUnsigned {
+			return true
+		} else {
+			return this.Int64() >= 0
+		}
+	} else {
+		return false
+	}
+}
+
+func (this *JsonValue) IsSigned() bool {
+	if false == this.IsNumber() {
+		return false
+	} else {
+		if this.mustFloat {
+			return false
+		} else if this.mustUnsigned {
+			return false
+		} else {
+			return this.Int64() < 0
+		}
+	}
+}

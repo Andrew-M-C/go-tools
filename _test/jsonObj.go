@@ -259,6 +259,18 @@ func TestJsonMerge() {
 
 
 func TestJsonObjSort() {
+	str := `{"z":"z", "g":"g", "1":1, "o":{"o1":1, "og":"g", "oa":"a"}}`
+	o, _ := jsonconv.NewFromString(str)
+
+	str, _ = o.Marshal(jsonconv.Option{SortMode: jsonconv.DictAsc})
+	log.Info(" asc sorted str: %s", str)
+
+	str, _ = o.Marshal(jsonconv.Option{SortMode: jsonconv.DictDesc})
+	log.Info("desc sorted str: %s", str)
+}
+
+
+func TestJsonArraySort() {
 	// randomize several numbers
 	COUNT := 10
 	json_list := jsonconv.NewArray()

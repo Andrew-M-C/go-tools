@@ -1,59 +1,67 @@
 package jsonconv
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strings"
-	"bytes"
 	"time"
 )
 
 var (
-	DataTypeError		= errors.New("invalid parameter type")
-	ParaError			= errors.New("parameter invalid")
-	JsonFormatError		= errors.New("json string format error")
-	JsonTypeError		= errors.New("json target type error")
+	DataTypeError			= errors.New("invalid parameter type")
+	ParaError				= errors.New("parameter invalid")
+	JsonFormatError			= errors.New("json string format error")
+	JsonTypeError			= errors.New("json target type error")
 	IndexOutOfBoundsError	= errors.New("index out of bounds")
 
-	NotAnArrayError		= errors.New("target is not an array")
-	NotAnObjectError	= errors.New("target is not an object")
-	NotAStringError		= errors.New("target is not a string")
-	NotANumberError		= errors.New("target is not a number")
-	NotABoolError		= errors.New("target is not a bool")
+	NotAnArrayError			= errors.New("target is not an array")
+	NotAnObjectError		= errors.New("target is not an object")
+	NotAStringError			= errors.New("target is not a string")
+	NotANumberError			= errors.New("target is not a number")
+	NotABoolError			= errors.New("target is not a bool")
 
-	ObjectNotFoundError	= errors.New("object not found")
+	ObjectNotFoundError = errors.New("object not found")
 )
-
 
 type Filter int
 const (
-	Normal		Filter = iota
+	Normal Filter = iota
 	IncludeMode
 	ExcludeMode
 )
 
+type Sort int
+const (
+	Random Sort = iota
+	DictAsc
+	DictDesc
+)
+
 type Option struct {
 	// for JsonValue
-	ShowNull		bool
-	EnsureAscii		bool
-	FloatDigits		uint8
+	ShowNull	bool
+	EnsureAscii	bool
+	FloatDigits	uint8
+	SortMode	Sort
 	// for sql2json
-	TimeDigits		uint8
-	FilterMode		Filter
-	FilterList		[]string
+	TimeDigits	uint8
+	FilterMode	Filter
+	FilterList	[]string
 	// for JsonValue.MergeFrom()
 	OverrideArray	bool
 	OverrideObject	bool
 }
 
-var dftOption = Option {
-	ShowNull: false,
-	EnsureAscii: false,
-	FloatDigits: 0,
-	TimeDigits: 0,
-	FilterMode: Normal,
-	OverrideArray: false,
-	OverrideObject: false,
+var dftOption = Option{
+	ShowNull:		false,
+	EnsureAscii:	false,
+	FloatDigits:	0,
+	SortMode:		Random,
+	TimeDigits:		0,
+	FilterMode:		Normal,
+	OverrideArray:	false,
+	OverrideObject:	false,
 }
 
 func escapeJsonString(s string, ensureAscii bool) string {

@@ -420,6 +420,16 @@ func (obj *JsonValue) Length() int {
 	}
 }
 
+func (obj *JsonValue) Len() int {
+	if obj.valueType == Array {
+		return len(obj.arrChildren)
+	} else if obj.valueType == Object {
+		return len(obj.objChildren)
+	} else {
+		return 0
+	}
+}
+
 // types
 func (obj *JsonValue) Type() ValueType {
 	return ValueType(obj.valueType)
@@ -565,7 +575,7 @@ func Marshal(obj *JsonValue, opts... Option) (string, error) {
 	return obj.Marshal(opts...)
 }
 
-func (obj *JsonValue)Marshal(opts... Option) (string, error) {
+func (obj *JsonValue) Marshal(opts... Option) (string, error) {
 	var opt *Option
 	if len(opts) > 0 {
 		opt = &(opts[0])
@@ -600,7 +610,7 @@ func (obj *JsonValue)Marshal(opts... Option) (string, error) {
 		is_first := true
 		b := bytes.Buffer{}
 		b.WriteRune('{')
-		for key, child := range obj.objChildren {
+		marshal_child_func := func (key string, child *JsonValue) {
 			if child.IsNull() && false == opt.ShowNull {
 				// do nothing
 			} else {
@@ -616,6 +626,16 @@ func (obj *JsonValue)Marshal(opts... Option) (string, error) {
 
 				child_str, _ := child.Marshal(*opt)
 				b.WriteString(child_str)
+			}
+		}
+		if Random != opt.SortMode {
+			sorted := sortObjects(obj, opt.SortMode)
+			for _, pair := range sorted {
+				marshal_child_func(pair.K, pair.V)
+			}
+		} else {
+			for key, child := range obj.objChildren {
+				marshal_child_func(key, child)
 			}
 		}
 		b.WriteRune('}')
