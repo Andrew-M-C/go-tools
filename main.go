@@ -9,9 +9,9 @@ func main() {
 	// log.SetLogLevel(log.LEVEL_NONE)
 	// test.TestSqlToJson()
 	// test.TestJsonValue()
-	test.TestJsonObjSort()
-	test.TestJsonArraySort()
-	test.TestStr()
+	// test.TestJsonObjSort()
+	// test.TestJsonArraySort()
+	// test.TestStr()
 
 	// {
 	// 	var t1, t2, t3, t4, t5 int64
@@ -39,6 +39,9 @@ func main() {
 
 	// test.TestAwsomeEscapingJson()
 	// test.TestJsonMerge()
+
+	test.TestReadSqlKVs()
+
 	log.Info("demo done")
 	return
 }

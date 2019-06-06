@@ -4,6 +4,7 @@ import (
 	"time"
 	"github.com/Andrew-M-C/go-tools/log"
 	"github.com/Andrew-M-C/go-tools/jsonconv"
+	"github.com/Andrew-M-C/go-tools/sqlconv"
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 )
@@ -24,6 +25,38 @@ type SqlExample struct {
 	Float	float32				`json:"float32"`
 	Time	time.Time			`json:"time"`
 }
+
+
+func TestReadSqlKVs() {
+	log.Info("====== now test GetValidKVsFromStruct")
+	item := SqlExample{}
+	item.Id = 10
+	item.NName = sql.NullString{String:"中文", Valid:true}
+	item.NTime = mysql.NullTime{Time:time.Now(), Valid:false}
+	item.NNum = sql.NullFloat64{Float64:1.23, Valid:false}
+	item.NBool = sql.NullBool{Bool:true, Valid:true}
+	item.NInt = sql.NullInt64{Int64:9999, Valid:true}
+	item.Int = 8888
+	item.String = "Hello,\tworld!"
+	item.NoTagString = "\"\"'''```"
+	item.Ignore = "ignore string"
+	item.Bool = true
+	item.Float = 1.110
+	item.Time = time.Now()
+
+	k, v, err := sqlconv.GetValidKVsFromStruct(&item, "'")
+	if err != nil {
+		log.Error("Getting failed: %s", err.Error())
+		return
+	}
+
+	for i := 0; i < len(k); i++ {
+		log.Info("%s -- %s", k[i], v[i])
+	}
+
+	return
+}
+
 
 func TestSqlToJson() {
 	log.Info("====== now test SqlToJson")
