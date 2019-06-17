@@ -29,7 +29,7 @@ func main() {
 	// 	t3 /= COUNT
 	// 	t4 /= COUNT
 	// 	t5 /= COUNT
-	// 	log.SetLogLevel(log.LEVEL_DEBUG)
+		log.SetLogLevel(log.LEVEL_DEBUG)
 	// 	log.Info("unmarshal to map: %v", t1)
 	// 	log.Info("unmarshal to map and parse: %v", t2)
 	// 	log.Info("unmarshal to struct: %v", t3)
@@ -40,7 +40,9 @@ func main() {
 	// test.TestAwsomeEscapingJson()
 	// test.TestJsonMerge()
 
-	test.TestReadSqlKVs()
+	// test.TestReadSqlKVs()
+
+	test.TestXmlconv()
 
 	log.Info("demo done")
 	return
