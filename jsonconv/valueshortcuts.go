@@ -47,6 +47,14 @@ func (this *JsonValue) SetFloat(f float64, first interface{}, keys ...interface{
 	return this.Set(NewFloat(f), first, keys...)
 }
 
+func (this *JsonValue) SetObject(first interface{}, keys ...interface{}) (*JsonValue, error) {
+	return this.Set(NewObject(), first, keys...)
+}
+
+func (this *JsonValue) SetArray(first interface{}, keys ...interface{}) (*JsonValue, error) {
+	return this.Set(NewArray(), first, keys...)
+}
+
 
 // ==== AppendXxx ====
 func (this *JsonValue) AppendString(s string, keys ...interface{}) (*JsonValue, error) {
