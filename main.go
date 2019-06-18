@@ -42,7 +42,8 @@ func main() {
 
 	// test.TestReadSqlKVs()
 
-	test.TestXmlconv()
+	// test.TestXmlconv()
+	test.TestXmlconvAccess()
 
 	log.Info("demo done")
 	return

@@ -58,15 +58,18 @@ func (self *Item) toBuffer(buff *bytes.Buffer, indent string, depth int) {
 	if str.Valid(indent) {
 		prefix = "\n" + strings.Repeat(indent, depth)
 	}
-	buff.WriteString(prefix)
+	if depth > 0 {
+		buff.WriteString(prefix)
+	}
 	buff.WriteRune('<')
 	buff.WriteString(self.name)
 
 	for k, v := range self.attrs {
 		buff.WriteRune(' ')
 		buff.WriteString(k)
-		buff.WriteRune('=')
-		buff.WriteString(v)
+		buff.WriteString("=\"")
+		writeAttrToBuff(v, buff)
+		buff.WriteRune('"')
 	}
 	buff.WriteRune('>')
 
@@ -91,4 +94,25 @@ func (self *Item) toBuffer(buff *bytes.Buffer, indent string, depth int) {
 	buff.WriteString("</")
 	buff.WriteString(self.name)
 	buff.WriteRune('>')
+}
+
+
+func writeAttrToBuff(v string, buff *bytes.Buffer) {
+	for _, c := range v {
+		switch c {
+		case '&':
+			buff.WriteString("&amp;")
+		case '<':
+			buff.WriteString("&lt;")
+		case '>':
+			buff.WriteString("&gt;")
+		case '"':
+			buff.WriteString("&quot;")
+		case '\'':
+			buff.WriteString("&apos;")
+		default:
+			buff.WriteRune(c)
+		}
+	}
+	return
 }

@@ -68,3 +68,25 @@ func TestXmlconv() {
 
 	return
 }
+
+
+func TestXmlconvAccess() {
+	root := xmlconv.NewItem("root")
+	root.SetEmptyChild("child_1", "child_2")
+	root.SetChildString("hello, xml!", "child_A", "child_2", "child_3")
+	root.SetEmptyChild("child_A", "child_2", "child_3")
+
+	c := xmlconv.NewItem("")
+	c.SetString("Hello, Earth!")
+	c.SetAttr("attr_1", "\"1\"")
+	c.SetAttr("attr_2", "2")
+	root.SetChild(c, "child_A", "child_2", "child_3")
+	s, _ := root.Marshal(xmlconv.Option{Indent:"  "})
+	log.Info("marshal result: \n%s", s)
+
+	// re-unmarshal
+	root, _ = xmlconv.NewFromString(s)
+	s, _ = root.Marshal(xmlconv.Option{Indent:""})
+	log.Info("re-marshal result: \n%s", s)
+	return
+}
