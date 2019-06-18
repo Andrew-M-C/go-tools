@@ -5,7 +5,7 @@
 
 package xmlconv
 import (
-	// "github.com/Andrew-M-C/go-tools/str"
+	"github.com/Andrew-M-C/go-tools/str"
 	"github.com/Andrew-M-C/go-tools/log"
 	"encoding/xml"
 	"bytes"
@@ -44,6 +44,39 @@ func (x *Item) GetAttr(a string) (string, bool) {
 	ret, exist := x.attrs[a]
 	return ret, exist
 }
+
+func (x *Item) SetAttr(n, v string) {
+	x.attrs[n] = v
+	return
+}
+
+func (x *Item) Children() map[string]*Item {
+	return x.child
+}
+
+func (x *Item) GetChild(a string) (c *Item, exist bool) {
+	c, exist = x.child[a]
+	return c, exist
+}
+
+func (x *Item) SetChild(c *Item, n string) *Item {
+	if nil == c || str.Empty(n) {
+		return c
+	} else {
+		x.child[n] = c
+	}
+	return c
+}
+
+func (x *Item) AddChild(n string) *Item {
+	if str.Empty(n) {
+		return nil
+	}
+	ret := NewItem()
+	x.child[n] = ret
+	return ret
+}
+
 
 func NewItem() *Item {
 	ret := Item{
