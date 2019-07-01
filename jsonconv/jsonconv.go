@@ -100,6 +100,8 @@ func escapeJsonString(s string, ensureAscii bool) string {
 			} else {
 				b.WriteByte('&')
 			}
+		case '%':
+			b.WriteString("\\u0025")
 		default:
 			if ensureAscii && chr > '\u0127' {
 				b.WriteString(fmt.Sprintf("\\u%04x", chr))

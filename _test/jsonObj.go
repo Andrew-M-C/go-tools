@@ -22,7 +22,7 @@ var strStandard = `{
 			"another-sub-string": "\"string\" in an object in an object",
 			"another-sub-array": [1, "string in sub
 array", true, null],
-			"complex":"\u4e2d\t\u6587<<&&&>>"
+			"complex":"\u4e2d\t\u6587<<&&&>>%s"
 		}
 	},
 	"an-array": [

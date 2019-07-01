@@ -7,9 +7,10 @@ import (
 
 func main() {
 	// log.SetLogLevel(log.LEVEL_NONE)
+	log.SetLogLevel(log.LEVEL_DEBUG)
 	// test.TestSqlToJson()
-	// test.TestJsonValue()
-	// test.TestJsonObjSort()
+	test.TestJsonValue()
+	test.TestJsonObjSort()
 	// test.TestJsonArraySort()
 	// test.TestStr()
 
@@ -29,7 +30,6 @@ func main() {
 	// 	t3 /= COUNT
 	// 	t4 /= COUNT
 	// 	t5 /= COUNT
-		log.SetLogLevel(log.LEVEL_DEBUG)
 	// 	log.Info("unmarshal to map: %v", t1)
 	// 	log.Info("unmarshal to map and parse: %v", t2)
 	// 	log.Info("unmarshal to struct: %v", t3)
@@ -43,7 +43,7 @@ func main() {
 	// test.TestReadSqlKVs()
 
 	// test.TestXmlconv()
-	test.TestXmlconvAccess()
+	// test.TestXmlconvAccess()
 
 	log.Info("demo done")
 	return
