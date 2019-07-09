@@ -30,7 +30,11 @@ const _TEST_STR = `
   <trade_type><![CDATA[JSAPI]]></trade_type>
   <transaction_id><![CDATA[1004400740201409030005092168]]></transaction_id>
   <sub>
-    <hello>hello</hello>
+	<hello>hello</hello>
+	<hello>world</hello>
+	<hello>this</hello>
+	<hello>is</hello>
+	<hello>Go!</hello>
   </sub>
 </xml>
 `
@@ -73,7 +77,7 @@ func TestXmlconv() {
 func TestXmlconvAccess() {
 	root := xmlconv.NewItem("root")
 	root.SetEmptyChild("child_1", "child_2")
-	root.SetChildString("hello, xml!", "child_A", "child_2", "child_3")
+	root.SetStringChild("hello, xml!", "child_A", "child_2", "child_3")
 	root.SetEmptyChild("child_A", "child_2", "child_3")
 
 	c := xmlconv.NewItem("")
@@ -81,10 +85,14 @@ func TestXmlconvAccess() {
 	c.SetAttr("attr_1", "\"1\"")
 	c.SetAttr("attr_2", "2")
 	root.SetChild(c, "child_A", "child_2", "child_3")
+	c2, _ := root.GetChild("child_A", "child_2")
+
+	c2c := xmlconv.NewItem("")
+	c2c.SetString("Hello, Moon!")
+	c2.AddChild(c2c, "child_3")
 	s, _ := root.Marshal(xmlconv.Option{Indent:"  "})
 	log.Info("marshal result: \n%s", s)
 
-	// re-unmarshal
 	root, _ = xmlconv.NewFromString(s)
 	s, _ = root.Marshal(xmlconv.Option{Indent:""})
 	log.Info("re-marshal result: \n%s", s)

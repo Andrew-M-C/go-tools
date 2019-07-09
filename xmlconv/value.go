@@ -12,12 +12,16 @@ import (
 	"io"
 )
 
+var (
+	emptyBytes = []byte{}
+)
+
 type Item struct {
 	name		string
 	data		[]byte
 	dataString	*string
 	attrs		map[string]string
-	child		map[string]*Item
+	child		map[string][]*Item
 }
 
 func (x *Item) Name() string {
@@ -52,7 +56,7 @@ func (x *Item) Attrs() map[string]string {
 	return x.attrs
 }
 
-func (x *Item) GetAttr(a string, defaultValue ...string) (string, bool) {
+func (x *Item) GetAttr(a string, defaultValue ...string) (attr string, exist bool) {
 	ret, exist := x.attrs[a]
 	if false == exist && len(defaultValue) > 0 {
 		ret = defaultValue[0]
@@ -65,18 +69,22 @@ func (x *Item) SetAttr(n, v string) {
 	return
 }
 
-func (x *Item) Children() map[string]*Item {
+func (x *Item) Children() map[string][]*Item {
 	return x.child
 }
 
+func (x *Item) Copy() *Item {
+	copy := *x
+	return &copy
+}
 
 func NewItem(name string) *Item {
 	// log.Debug("NewItem %s", name)
 	ret := Item{
 		name: name,
 		attrs: make(map[string]string),
-		child: make(map[string]*Item),
-		data: []byte(""),
+		child: make(map[string][]*Item),
+		data: emptyBytes,
 	}
 	return &ret
 }
@@ -125,7 +133,12 @@ func NewFromBytes(b []byte) (*Item, error) {
 				attr[a.Name.Local] = a.Value
 			}
 			if curr != nil {
-				curr.child[name] = item
+				children, exist := curr.child[name]
+				if false == exist {
+					children = make([]*Item, 0, 0)
+				}
+				children = append(children, item)
+				curr.child[name] = children
 				stk.Push(curr)
 			} else {
 				root = item

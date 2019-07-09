@@ -85,8 +85,10 @@ func (self *Item) toBuffer(buff *bytes.Buffer, indent string, depth int) {
 	}
 
 	if len(self.child) > 0 {
-		for _, c := range self.child {
-			c.toBuffer(buff, indent, depth + 1)
+		for _, c_list := range self.child {
+			for _, c := range c_list {
+				c.toBuffer(buff, indent, depth + 1)
+			}
 		}
 		buff.WriteString(prefix)
 	}

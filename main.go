@@ -9,8 +9,8 @@ func main() {
 	// log.SetLogLevel(log.LEVEL_NONE)
 	log.SetLogLevel(log.LEVEL_DEBUG)
 	// test.TestSqlToJson()
-	test.TestJsonValue()
-	test.TestJsonObjSort()
+	// test.TestJsonValue()
+	// test.TestJsonObjSort()
 	// test.TestJsonArraySort()
 	// test.TestStr()
 
@@ -43,7 +43,7 @@ func main() {
 	// test.TestReadSqlKVs()
 
 	// test.TestXmlconv()
-	// test.TestXmlconvAccess()
+	test.TestXmlconvAccess()
 
 	log.Info("demo done")
 	return
