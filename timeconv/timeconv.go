@@ -1,7 +1,7 @@
 package timeconv
 
 import (
-	"log"
+	// "log"
 	"time"
 )
 
@@ -22,8 +22,8 @@ func AddDate(t time.Time, years, months, days int) time.Time {
 	ns := t.Nanosecond()
 	lo := t.Location()
 
-	log.Printf("input: %d - %d - %d\n", ye, mo, da)
-	log.Printf("delta: %d - %d - %d\n", years, months, days)
+	// log.Printf("input: %d - %d - %d\n", ye, mo, da)
+	// log.Printf("delta: %d - %d - %d\n", years, months, days)
 
 	// years
 	ye += years
